@@ -1,56 +1,56 @@
-# 太阳系项目 (Solar System Project)
+# Solar System Project
 
-这是一个使用 Unity 引擎开发的太阳系交互式可视化项目。
+An interactive visualization project of the solar system developed using the Unity engine.
 
-## 项目简介
+## Project Overview
 
-该项目展示了太阳系中各个天体的运动和交互。用户可以通过点击或交互来观察不同行星的信息。
+This project showcases the movement and interaction of celestial bodies in the solar system. Users can click or interact with different planets to observe their information.
 
-## 项目结构
+## Project Structure
 
 ```
 Assets/
-├── Scenes/                 # 场景文件
-│   └── SampleScene.unity   # 主场景
-├── SolarSystemAssets2026/  # 太阳系资源
-│   ├── Scripts/            # C# 脚本文件
-│   ├── Materials/          # 材质文件
-│   ├── Textures/           # 纹理文件
-│   ├── Icons/              # 图标资源
-│   └── Sounds/             # 音效文件
-└── TextMesh Pro/           # TextMesh Pro 文本组件资源
+├── Scenes/                 # Scene files
+│   └── SampleScene.unity   # Main scene
+├── SolarSystemAssets2026/  # Solar system resources
+│   ├── Scripts/            # C# script files
+│   ├── Materials/          # Material files
+│   ├── Textures/           # Texture files
+│   ├── Icons/              # Icon assets
+│   └── Sounds/             # Sound effects
+└── TextMesh Pro/           # TextMesh Pro text component resources
 ```
 
-## 核心脚本
+## Core Scripts
 
-- **CameraFocusController.cs** - 摄像机焦点控制
-- **CelestialBody.cs** - 天体基类
-- **RotateAround.cs** - 围绕中心天体旋转
-- **SolarSystemInteractor.cs** - 太阳系交互系统
-- **SolarSystemUIManager.cs** - UI 管理器
-- **Spawner.cs** - 对象生成器
-- **LookAtTarget.cs** - 看向目标的脚本
-- **Projectile.cs** - 抛物体脚本
+- **CameraFocusController.cs** - Camera focus control
+- **CelestialBody.cs** - Celestial body base class
+- **RotateAround.cs** - Rotation around central body
+- **SolarSystemInteractor.cs** - Solar system interaction system
+- **SolarSystemUIManager.cs** - UI manager
+- **Spawner.cs** - Object spawner
+- **LookAtTarget.cs** - Look at target script
+- **Projectile.cs** - Projectile script
 
-## 使用的技术
+## Technologies Used
 
-- Unity 3D 引擎
-- C# 编程语言
-- TextMesh Pro 文本组件
-- 3D 图形渲染
+- Unity 3D Engine
+- C# Programming Language
+- TextMesh Pro Text Component
+- 3D Graphics Rendering
 
-## 安装和运行
+## Installation and Usage
 
-1. 确保安装了 Unity 2022 或更新版本
-2. 克隆此项目到本地
-3. 用 Unity Hub 打开项目
-4. 在 Unity 编辑器中打开 SampleScene
-5. 点击播放按钮运行项目
+1. Ensure Unity 2022 or newer version is installed
+2. Clone this project to your local machine
+3. Open the project with Unity Hub
+4. Open SampleScene in the Unity Editor
+5. Click the play button to run the project
 
-## 许可证
+## License
 
-此项目仅供学习和个人使用。
+This project is for educational and personal use only.
 
 ---
 
-**创建时间**: 2026年4月
+**Created**: April 2026
