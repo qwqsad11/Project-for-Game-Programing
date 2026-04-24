@@ -1,0 +1,37 @@
+# Unity specific
+/Library/
+/Temp/
+/obj/
+/Logs/
+*.csproj
+*.sln
+*.unityproj
+*.unitypackage
+
+# Visual Studio cache
+.vs/
+.vscode/
+*.code-workspace
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+
+# Local environment
+.env
+.env.local
