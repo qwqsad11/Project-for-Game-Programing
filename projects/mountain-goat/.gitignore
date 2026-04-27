@@ -1,0 +1,27 @@
+# Unity generated folders
+/Library/
+/Temp/
+/Obj/
+/Logs/
+/Build/
+/Builds/
+/UserSettings/
+
+# IDE and solution files
+*.csproj
+*.sln
+*.unityproj
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.opendb
+
+# OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
