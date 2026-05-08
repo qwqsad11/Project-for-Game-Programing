@@ -1,8 +1,14 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
     public enum GameState { Menu, Playing, GameOver, Paused }
+
+    [Header("Scene Names")]
+    [SerializeField] private string mainMenuSceneName = "MainMenu";
+    [SerializeField] private string gameplaySceneName = "GamePlay";
+    [SerializeField] private string gameOverSceneName = "GameOver";
 
     private static GameManager _instance;
     public static GameManager Instance
@@ -44,6 +50,21 @@ public class GameManager : MonoBehaviour
         LoadHighScore();
     }
 
+    private void Start()
+    {
+        SyncStateWithActiveScene();
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += HandleSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= HandleSceneLoaded;
+    }
+
     public void ChangeState(GameState newState)
     {
         if (currentState == newState) return;
@@ -71,14 +92,15 @@ public class GameManager : MonoBehaviour
     private void HandleMenuState()
     {
         Time.timeScale = 1f;
-        // TODO: Load main menu scene
+        LoadSceneIfNeeded(mainMenuSceneName);
     }
 
     private void HandlePlayingState()
     {
         Time.timeScale = 1f;
         Score = 0;
-        // TODO: Load game scene
+        OnScoreChanged?.Invoke(Score);
+        LoadSceneIfNeeded(gameplaySceneName);
     }
 
     private void HandleGameOverState()
@@ -89,7 +111,8 @@ public class GameManager : MonoBehaviour
             HighScore = Score;
             SaveHighScore();
         }
-        // TODO: Load game over scene
+
+        LoadSceneIfNeeded(gameOverSceneName);
     }
 
     private void HandlePausedState()
@@ -108,6 +131,39 @@ public class GameManager : MonoBehaviour
         ChangeState(GameState.GameOver);
     }
 
+    public void StartGame()
+    {
+        ChangeState(GameState.Playing);
+    }
+
+    public void ReturnToMenu()
+    {
+        ChangeState(GameState.Menu);
+    }
+
+    public void RestartGame()
+    {
+        Time.timeScale = 1f;
+        currentState = GameState.Menu;
+        StartGame();
+    }
+
+    public void SetPaused(bool paused)
+    {
+        if (paused)
+        {
+            ChangeState(GameState.Paused);
+            return;
+        }
+
+        if (currentState == GameState.Paused)
+        {
+            currentState = GameState.Playing;
+            Time.timeScale = 1f;
+            OnStateChanged?.Invoke(currentState);
+        }
+    }
+
     private void LoadHighScore()
     {
         HighScore = PlayerPrefs.GetInt("HighScore", 0);
@@ -117,6 +173,48 @@ public class GameManager : MonoBehaviour
     {
         PlayerPrefs.SetInt("HighScore", HighScore);
         PlayerPrefs.Save();
+    }
+
+    private void LoadSceneIfNeeded(string sceneName)
+    {
+        if (string.IsNullOrWhiteSpace(sceneName))
+        {
+            Debug.LogWarning("GameManager scene name is empty.");
+            return;
+        }
+
+        Scene activeScene = SceneManager.GetActiveScene();
+        if (activeScene.name == sceneName)
+        {
+            SyncStateWithActiveScene();
+            return;
+        }
+
+        SceneManager.LoadScene(sceneName);
+    }
+
+    private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        SyncStateWithActiveScene();
+    }
+
+    private void SyncStateWithActiveScene()
+    {
+        string activeSceneName = SceneManager.GetActiveScene().name;
+        if (activeSceneName == gameplaySceneName)
+        {
+            currentState = GameState.Playing;
+        }
+        else if (activeSceneName == gameOverSceneName)
+        {
+            currentState = GameState.GameOver;
+        }
+        else
+        {
+            currentState = GameState.Menu;
+        }
+
+        OnStateChanged?.Invoke(currentState);
     }
 
     // Events
