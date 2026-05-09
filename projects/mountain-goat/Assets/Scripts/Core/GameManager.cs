@@ -34,6 +34,8 @@ public class GameManager : MonoBehaviour
 
     public int Score { get; private set; } = 0;
     public int HighScore { get; private set; } = 0;
+    public float CurrentHunger { get; private set; } = 0f;
+    public float MaxHunger { get; private set; } = 100f;
 
     private void Awake()
     {
@@ -100,6 +102,7 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1f;
         Score = 0;
         OnScoreChanged?.Invoke(Score);
+        NotifyHungerChanged(0f, MaxHunger <= 0f ? 100f : MaxHunger);
         LoadSceneIfNeeded(gameplaySceneName);
     }
 
@@ -217,10 +220,20 @@ public class GameManager : MonoBehaviour
         OnStateChanged?.Invoke(currentState);
     }
 
+    public void NotifyHungerChanged(float currentHunger, float maxHunger)
+    {
+        CurrentHunger = currentHunger;
+        MaxHunger = maxHunger;
+        OnHungerChanged?.Invoke(CurrentHunger, MaxHunger);
+    }
+
     // Events
     public delegate void StateChanged(GameState state);
     public event StateChanged OnStateChanged;
 
     public delegate void ScoreChanged(int score);
     public event ScoreChanged OnScoreChanged;
+
+    public delegate void HungerChanged(float currentHunger, float maxHunger);
+    public event HungerChanged OnHungerChanged;
 }

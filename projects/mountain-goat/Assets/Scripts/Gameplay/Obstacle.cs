@@ -16,7 +16,7 @@ public class Obstacle : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         GoatController goat = other.GetComponent<GoatController>();
-        if (goat != null)
+        if (goat != null && goat.CanDie)
         {
             goat.Die();
         }

@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 [RequireComponent(typeof(Collider))]
+[RequireComponent(typeof(HungerSystem))]
 public class GoatController : MonoBehaviour
 {
     [Header("Grid Movement")]
@@ -20,24 +21,35 @@ public class GoatController : MonoBehaviour
     [SerializeField] private int leftLaneLimit = -1;
     [SerializeField] private int rightLaneLimit = 1;
     [SerializeField] private float fallDeathY = -5f;
+    [SerializeField] private float spawnProtectionDuration = 0.5f;
 
     [Header("Optional References")]
     [SerializeField] private Animator animator;
 
+    private HungerSystem hungerSystem;
     private bool isMoving;
     private bool isDead;
     private int currentLane;
     private int currentRow;
+    private float spawnProtectionTimer;
 
     public int CurrentLane => currentLane;
     public int CurrentRow => currentRow;
     public bool IsDead => isDead;
+    public bool CanDie => !isDead && spawnProtectionTimer <= 0f;
 
     private void Start()
     {
+        hungerSystem = GetComponent<HungerSystem>();
         currentLane = Mathf.Clamp(startLane, leftLaneLimit, rightLaneLimit);
         currentRow = Mathf.Max(minRow, Mathf.RoundToInt(transform.position.z / forwardStep));
         transform.position = GetWorldPosition(currentLane, currentRow);
+        if (hungerSystem != null)
+        {
+            hungerSystem.ResetForNewRun();
+        }
+
+        spawnProtectionTimer = spawnProtectionDuration;
     }
 
     private void Update()
@@ -47,7 +59,12 @@ public class GoatController : MonoBehaviour
             return;
         }
 
-        if (transform.position.y < fallDeathY)
+        if (spawnProtectionTimer > 0f)
+        {
+            spawnProtectionTimer -= Time.deltaTime;
+        }
+
+        if (CanDie && transform.position.y < fallDeathY)
         {
             Die();
             return;
@@ -130,7 +147,7 @@ public class GoatController : MonoBehaviour
 
     public void Die()
     {
-        if (isDead)
+        if (!CanDie)
         {
             return;
         }

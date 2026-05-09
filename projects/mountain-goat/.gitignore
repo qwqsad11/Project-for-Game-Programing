@@ -1,16 +1,14 @@
-# Unity generated folders
-/Library/
-/Temp/
-/Obj/
-/Logs/
-/Build/
-/Builds/
-/UserSettings/
+# Unity generated
+Library/
+Temp/
+Obj/
+Build/
+Builds/
 
-# IDE and solution files
+# Visual Studio
 *.csproj
-*.sln
 *.unityproj
+*.sln
 *.suo
 *.tmp
 *.user
@@ -21,7 +19,44 @@
 *.pdb
 *.opendb
 
-# OS generated files
+# OS generated
 .DS_Store
-Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
 ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+
+# Unity
+*.unitypackage
+*.asset
+*.meta
+*.prefab
+*.mat
+*.anim
+*.controller
+*.overrideController
+*.physicMaterial
+*.physicsMaterial2D
+*.playable
+*.mask
+*.brush
+*.flare
+*.lensFlare
+*.renderTexture
+*.lightmap
+*.lighting
+*.occlusion
+*.navmesh
+*.giparams
+*.unity
+*.scene
+
+# Exceptions (keep these)
+!Assets/Scenes/*.unity
+!Assets/Scripts/*.cs
+!Assets/Prefabs/*.prefab

@@ -8,6 +8,7 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private GoatController player;
     [SerializeField] private GameObject safePlatformPrefab;
     [SerializeField] private GameObject obstaclePlatformPrefab;
+    [SerializeField] private GameObject grassPickupPrefab;
 
     [Header("Generation")]
     [SerializeField] private int lanes = 3;
@@ -19,6 +20,8 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private float rowStep = 1.5f;
     [SerializeField] private float heightStep = 0.5f;
     [SerializeField] private float obstacleSpawnChance = 0.35f;
+    [SerializeField] private float grassSpawnChance = 0.2f;
+    [SerializeField] private float pickupHeightOffset = 0.9f;
 
     private readonly List<GameObject> spawnedObjects = new List<GameObject>();
     private int lastGeneratedRow = -1;
@@ -74,6 +77,13 @@ public class LevelGenerator : MonoBehaviour
             Vector3 position = GetWorldPosition(laneIndex, rowIndex);
             GameObject spawned = Instantiate(prefab, position, Quaternion.identity, transform);
             spawnedObjects.Add(spawned);
+
+            if (!shouldUseObstacle && grassPickupPrefab != null && Random.value < grassSpawnChance)
+            {
+                Vector3 pickupPosition = position + Vector3.up * pickupHeightOffset;
+                GameObject pickup = Instantiate(grassPickupPrefab, pickupPosition, Quaternion.identity, spawned.transform);
+                spawnedObjects.Add(pickup);
+            }
         }
     }
 
