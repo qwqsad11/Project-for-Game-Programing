@@ -2447,6 +2447,9 @@ GameObject:
   - component: {fileID: 8479798530941442597}
   - component: {fileID: 4488131368354554865}
   - component: {fileID: 5474302769729384437}
+  - component: {fileID: 7000000000000000001}
+  - component: {fileID: 7000000000000000002}
+  - component: {fileID: 7000000000000000003}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -2513,6 +2516,61 @@ MonoBehaviour:
   trotAnimation: trot_forward
   sittostandAnimation: sit_to_stand
   standtositAnimation: stand_to_sit
+--- !u!114 &7000000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4980728175960791824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c8f5c0b1d2e4f6a8b9c0d1e2f3a4b5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startGrid: {x: 0, y: 0}
+  minGrid: {x: -2, y: 0}
+  maxGrid: {x: 2, y: 99999}
+  jumpDuration: 0.15
+  jumpHeight: 0.85
+  squashAmount: 0.12
+  stretchAmount: 0.12
+  fallDeathY: -8
+  spawnProtectionDuration: 0.5
+  animator: {fileID: 4488131368354554865}
+--- !u!114 &7000000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4980728175960791824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a1b2c3d4e5f60718293a4b5c6d7e8f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &7000000000000000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4980728175960791824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ef6db5b21e1ab54d91c523e04bc4570, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  tileWidth: 1.5
+  tileDepth: 1.5
+  gridStepY: 0.5
+  startGrid: {x: 0, y: 0}
+  minGrid: {x: -2, y: 0}
+  maxGrid: {x: 2, y: 99999}
+  fallDeathY: -8
+  spawnProtectionDuration: 0.5
+  animator: {fileID: 4488131368354554865}
 --- !u!1 &4991923091833278311
 GameObject:
   m_ObjectHideFlags: 0

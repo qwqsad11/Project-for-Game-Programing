@@ -7,12 +7,18 @@ public class SimpleGameplayHUD : MonoBehaviour
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private TMP_Text highScoreText;
     [SerializeField] private TMP_Text hungerText;
+    [SerializeField] private TMP_Text coinsText;
+    [SerializeField] private TMP_Text totalCoinsText;
 
     private void OnEnable()
     {
-        GameManager.Instance.OnScoreChanged += HandleScoreChanged;
-        GameManager.Instance.OnStateChanged += HandleStateChanged;
-        GameManager.Instance.OnHungerChanged += HandleHungerChanged;
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnScoreChanged += HandleScoreChanged;
+            GameManager.Instance.OnStateChanged += HandleStateChanged;
+            GameManager.Instance.OnHungerChanged += HandleHungerChanged;
+            GameManager.Instance.OnCoinsChanged += HandleCoinsChanged;
+        }
         Refresh();
     }
 
@@ -23,6 +29,7 @@ public class SimpleGameplayHUD : MonoBehaviour
             GameManager.Instance.OnScoreChanged -= HandleScoreChanged;
             GameManager.Instance.OnStateChanged -= HandleStateChanged;
             GameManager.Instance.OnHungerChanged -= HandleHungerChanged;
+            GameManager.Instance.OnCoinsChanged -= HandleCoinsChanged;
         }
     }
 
@@ -41,8 +48,18 @@ public class SimpleGameplayHUD : MonoBehaviour
         Refresh();
     }
 
+    private void HandleCoinsChanged(int sessionCoins, int totalCoins)
+    {
+        Refresh();
+    }
+
     private void Refresh()
     {
+        if (GameManager.Instance == null)
+        {
+            return;
+        }
+
         if (scoreText != null)
         {
             scoreText.text = $"Score: {GameManager.Instance.Score}";
@@ -59,6 +76,16 @@ public class SimpleGameplayHUD : MonoBehaviour
                 ? 0f
                 : (GameManager.Instance.CurrentHunger / GameManager.Instance.MaxHunger) * 100f);
             hungerText.text = $"Hunger: {hungerPercent}%";
+        }
+
+        if (coinsText != null)
+        {
+            coinsText.text = $"Coins: {GameManager.Instance.SessionCoins}";
+        }
+
+        if (totalCoinsText != null)
+        {
+            totalCoinsText.text = $"Total Coins: {GameManager.Instance.TotalCoins}";
         }
     }
 }

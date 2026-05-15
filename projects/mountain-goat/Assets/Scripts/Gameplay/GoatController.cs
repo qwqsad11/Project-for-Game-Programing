@@ -1,58 +1,88 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 [RequireComponent(typeof(Collider))]
-[RequireComponent(typeof(HungerSystem))]
 public class GoatController : MonoBehaviour
 {
-    [Header("Grid Movement")]
-    [FormerlySerializedAs("diagonalStep")]
-    [SerializeField] private float laneOffset = 1.5f;
-    [FormerlySerializedAs("diagonalStep")]
-    [SerializeField] private float forwardStep = 1.5f;
-    [SerializeField] private float heightStep = 0.5f;
-    [SerializeField] private float moveDuration = 0.18f;
-    [SerializeField] private float jumpHeight = 0.8f;
-    [SerializeField] private int startLane = 0;
-    [SerializeField] private int minRow = 0;
+    public static readonly Vector2Int UpperLeft = new Vector2Int(-1, 1);
+    public static readonly Vector2Int UpperRight = new Vector2Int(1, 1);
+    public static readonly Vector2Int LowerLeft = new Vector2Int(-1, -1);
+    public static readonly Vector2Int LowerRight = new Vector2Int(1, -1);
 
-    [Header("Bounds")]
-    [SerializeField] private int leftLaneLimit = -1;
-    [SerializeField] private int rightLaneLimit = 1;
-    [SerializeField] private float fallDeathY = -5f;
-    [SerializeField] private float spawnProtectionDuration = 0.5f;
+    [Header("Grid")]
+    [SerializeField] private Vector2Int startGrid = Vector2Int.zero;
+    [SerializeField] private Vector2Int currentGridPosition;
+    [SerializeField] private Vector2Int targetGridPosition;
 
-    [Header("Optional References")]
+    [Header("Jump")]
+    [SerializeField] private float jumpDuration = 0.18f;
+    [SerializeField] private float jumpHeight = 0.95f;
+    [SerializeField] private float squashAmount = 0.12f;
+    [SerializeField] private float stretchAmount = 0.12f;
+    [SerializeField] private float springJumpMultiplier = 1.35f;
+
+    [Header("State")]
+    [SerializeField] private float fallDeathY = -8f;
+    [SerializeField] private float spawnProtectionDuration = 0.35f;
+    [SerializeField] private float worldYOffset = 0.45f;
+
+    [Header("References")]
     [SerializeField] private Animator animator;
+    [SerializeField] private Transform visualRoot;
+    [SerializeField] private CameraFollow cameraFollow;
 
-    private HungerSystem hungerSystem;
-    private bool isMoving;
+    private GridManager gridManager;
+    private Coroutine jumpCoroutine;
     private bool isDead;
-    private int currentLane;
-    private int currentRow;
     private float spawnProtectionTimer;
+    private Vector3 visualBaseScale;
+    private float pendingJumpHeightMultiplier = 1f;
 
-    public int CurrentLane => currentLane;
-    public int CurrentRow => currentRow;
+    public Vector2Int CurrentGrid => currentGridPosition;
+    public Vector2Int CurrentGridPosition => currentGridPosition;
+    public Vector2Int TargetGridPosition => targetGridPosition;
     public bool IsDead => isDead;
-    public bool CanDie => !isDead && spawnProtectionTimer <= 0f;
+    public bool IsJumping => isJumping;
+    public bool CanDie => !isDead && spawnProtectionTimer <= 0f && !IsJumping;
 
-    private void Start()
+    private bool isJumping;
+
+    protected virtual void Awake()
     {
-        hungerSystem = GetComponent<HungerSystem>();
-        currentLane = Mathf.Clamp(startLane, leftLaneLimit, rightLaneLimit);
-        currentRow = Mathf.Max(minRow, Mathf.RoundToInt(transform.position.z / forwardStep));
-        transform.position = GetWorldPosition(currentLane, currentRow);
-        if (hungerSystem != null)
+        gridManager = GridManager.Instance != null ? GridManager.Instance : FindObjectOfType<GridManager>();
+        if (visualRoot == null)
         {
-            hungerSystem.ResetForNewRun();
+            visualRoot = transform;
+        }
+
+        visualBaseScale = visualRoot != null ? visualRoot.localScale : transform.localScale;
+        if (cameraFollow == null)
+        {
+            cameraFollow = FindObjectOfType<CameraFollow>();
+        }
+    }
+
+    protected virtual void Start()
+    {
+        gridManager ??= GridManager.Instance != null ? GridManager.Instance : FindObjectOfType<GridManager>();
+        currentGridPosition = startGrid;
+        targetGridPosition = currentGridPosition;
+
+        if (gridManager != null)
+        {
+            currentGridPosition = gridManager.SnapToGrid(currentGridPosition);
+            targetGridPosition = currentGridPosition;
+            transform.position = GetWorldPosition(currentGridPosition);
+        }
+        else
+        {
+            transform.position = GetWorldPosition(currentGridPosition);
         }
 
         spawnProtectionTimer = spawnProtectionDuration;
     }
 
-    private void Update()
+    protected virtual void Update()
     {
         if (GameManager.Instance.CurrentState != GameManager.GameState.Playing || isDead)
         {
@@ -64,85 +94,54 @@ public class GoatController : MonoBehaviour
             spawnProtectionTimer -= Time.deltaTime;
         }
 
-        if (CanDie && transform.position.y < fallDeathY)
+        if (!IsJumping && transform.position.y < fallDeathY && CanDie)
         {
             Die();
             return;
         }
 
-        if (!isMoving)
+        if (!IsJumping)
         {
             HandleInput();
         }
     }
 
-    private void HandleInput()
+    public void MoveUpperLeft() => TryMove(UpperLeft);
+    public void MoveUpperRight() => TryMove(UpperRight);
+    public void MoveLowerLeft() => TryMove(LowerLeft);
+    public void MoveLowerRight() => TryMove(LowerRight);
+
+    public void MoveLeft() => TryMove(UpperLeft);
+    public void MoveRight() => TryMove(UpperRight);
+    public void MoveUp() => TryMove(UpperRight);
+    public void MoveDown() => TryMove(LowerLeft);
+
+    public void TryMove(Vector2Int delta)
     {
-        bool moveLeftPressed = Input.GetKeyDown(KeyCode.Q);
-        bool moveForwardPressed = Input.GetKeyDown(KeyCode.E);
-        bool moveBackwardPressed = Input.GetKeyDown(KeyCode.A);
-        bool moveRightPressed = Input.GetKeyDown(KeyCode.D);
-
-        if (Input.touchCount > 0)
-        {
-            Touch touch = Input.GetTouch(0);
-            if (touch.phase == TouchPhase.Began)
-            {
-                if (touch.position.x < Screen.width * 0.5f)
-                {
-                    moveLeftPressed = true;
-                }
-                else
-                {
-                    moveRightPressed = true;
-                }
-            }
-        }
-
-        if (Input.GetMouseButtonDown(0))
-        {
-            if (Input.mousePosition.x < Screen.width * 0.5f)
-            {
-                moveLeftPressed = true;
-            }
-            else
-            {
-                moveRightPressed = true;
-            }
-        }
-
-        if (moveLeftPressed)
-        {
-            TryMove(-1, 0);
-        }
-        else if (moveForwardPressed)
-        {
-            TryMove(0, 1);
-        }
-        else if (moveBackwardPressed)
-        {
-            TryMove(0, -1);
-        }
-        else if (moveRightPressed)
-        {
-            TryMove(1, 0);
-        }
-    }
-
-    private void TryMove(int laneDelta, int rowDelta)
-    {
-        int targetLane = Mathf.Clamp(currentLane + laneDelta, leftLaneLimit, rightLaneLimit);
-        int targetRow = currentRow + rowDelta;
-
-        if ((targetLane == currentLane && targetRow == currentRow) || targetRow < minRow)
+        if (isDead || IsJumping || delta == Vector2Int.zero)
         {
             return;
         }
 
-        currentLane = targetLane;
-        currentRow = targetRow;
-        Vector3 targetPosition = GetWorldPosition(currentLane, currentRow);
-        StartCoroutine(MoveRoutine(targetPosition));
+        if (!GridManager.IsDiagonalStep(delta))
+        {
+            return;
+        }
+
+        Vector2Int candidateGrid = currentGridPosition + delta;
+
+        if (gridManager != null && !gridManager.HasTile(candidateGrid))
+        {
+            return;
+        }
+
+        targetGridPosition = candidateGrid;
+        StartJumpRoutine();
+
+        if (animator != null)
+        {
+            animator.SetTrigger("Jump");
+        }
     }
 
     public void Die()
@@ -153,6 +152,7 @@ public class GoatController : MonoBehaviour
         }
 
         isDead = true;
+
         if (animator != null)
         {
             animator.SetTrigger("Die");
@@ -161,41 +161,115 @@ public class GoatController : MonoBehaviour
         GameManager.Instance.GameOver();
     }
 
-    private IEnumerator MoveRoutine(Vector3 targetPosition)
+    public void QueueSpringHop()
     {
-        isMoving = true;
+        ApplySpringBoost();
+    }
 
-        if (animator != null)
+    public void ApplySpringBoost()
+    {
+        pendingJumpHeightMultiplier = Mathf.Max(pendingJumpHeightMultiplier, springJumpMultiplier);
+    }
+
+    private void HandleInput()
+    {
+        if (Input.GetKeyDown(KeyCode.Q))
         {
-            animator.SetTrigger("Jump");
+            TryMove(UpperLeft);
+        }
+        else if (Input.GetKeyDown(KeyCode.E))
+        {
+            TryMove(UpperRight);
+        }
+        else if (Input.GetKeyDown(KeyCode.A))
+        {
+            TryMove(LowerLeft);
+        }
+        else if (Input.GetKeyDown(KeyCode.D))
+        {
+            TryMove(LowerRight);
+        }
+    }
+
+    private void StartJumpRoutine()
+    {
+        if (jumpCoroutine != null)
+        {
+            StopCoroutine(jumpCoroutine);
         }
 
+        isJumping = true;
+        jumpCoroutine = StartCoroutine(JumpToGridRoutine());
+    }
+
+    private IEnumerator JumpToGridRoutine()
+    {
+        isJumping = true;
+
         Vector3 startPosition = transform.position;
+        Vector3 endPosition = GetWorldPosition(targetGridPosition);
+        float appliedJumpHeightMultiplier = pendingJumpHeightMultiplier;
+        pendingJumpHeightMultiplier = 1f;
+
         float elapsed = 0f;
 
-        while (elapsed < moveDuration)
+        while (elapsed < jumpDuration)
         {
             elapsed += Time.deltaTime;
-            float progress = Mathf.Clamp01(elapsed / moveDuration);
-            float arc = 4f * jumpHeight * progress * (1f - progress);
+            float t = Mathf.Clamp01(elapsed / jumpDuration);
+            float arc = Mathf.Sin(t * Mathf.PI) * jumpHeight * appliedJumpHeightMultiplier;
 
-            Vector3 nextPosition = Vector3.Lerp(startPosition, targetPosition, progress);
-            nextPosition.y = startPosition.y + arc;
-            transform.position = nextPosition;
+            Vector3 position = Vector3.Lerp(startPosition, endPosition, t);
+            position.y += arc;
+            transform.position = position;
+
+            if (visualRoot != null)
+            {
+                float squashPhase = Mathf.Sin(t * Mathf.PI);
+                float squash = 1f - (squashAmount * squashPhase);
+                float stretch = 1f + (stretchAmount * squashPhase);
+                visualRoot.localScale = new Vector3(
+                    visualBaseScale.x * squash,
+                    visualBaseScale.y * stretch,
+                    visualBaseScale.z * squash);
+            }
 
             yield return null;
         }
 
-        transform.position = targetPosition;
-        if (targetPosition.z > startPosition.z)
+        transform.position = endPosition;
+
+        if (visualRoot != null)
+        {
+            visualRoot.localScale = visualBaseScale;
+        }
+
+        currentGridPosition = targetGridPosition;
+        isJumping = false;
+        jumpCoroutine = null;
+
+        if (cameraFollow != null)
+        {
+            cameraFollow.TriggerShake();
+        }
+
+        if (gridManager != null && gridManager.TryGetTile(currentGridPosition, out Tile tile))
+        {
+            tile.OnPlayerLanded(this);
+        }
+
+        if (!isDead && GameManager.Instance != null)
         {
             GameManager.Instance.AddScore(1);
         }
-        isMoving = false;
     }
 
-    private Vector3 GetWorldPosition(int lane, int row)
+    private Vector3 GetWorldPosition(Vector2Int gridPosition)
     {
-        return new Vector3(lane * laneOffset, row * heightStep, row * forwardStep);
+        Vector3 world = gridManager != null
+            ? gridManager.GridToWorld(gridPosition)
+            : IsoGrid.ToWorld(gridPosition, 1.5f, 0.75f, 0.5f);
+        world.y += worldYOffset;
+        return world;
     }
 }

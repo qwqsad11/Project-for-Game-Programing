@@ -1,13 +1,15 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
-public class GrassPickup : MonoBehaviour
+public class CoinPickup : MonoBehaviour
 {
-    [SerializeField] private float hungerReduceAmount = 30f;
+    [SerializeField] private int coinValue = 1;
     [SerializeField] private GameObject consumedVisual;
     [SerializeField] private bool destroyRootOnConsume = true;
+    [SerializeField] private bool rotate = true;
+    [SerializeField] private Vector3 rotationAxis = new Vector3(0f, 120f, 0f);
 
-    private bool consumed;
+    private bool collected;
     private Collider pickupCollider;
 
     private void Awake()
@@ -29,19 +31,32 @@ public class GrassPickup : MonoBehaviour
         rigidbody.constraints = RigidbodyConstraints.FreezeRotation;
     }
 
+    private void Update()
+    {
+        if (collected)
+        {
+            return;
+        }
+
+        if (rotate && GameManager.Instance != null && GameManager.Instance.CurrentState == GameManager.GameState.Playing)
+        {
+            transform.Rotate(rotationAxis * Time.deltaTime, Space.Self);
+        }
+    }
+
     private void OnTriggerEnter(Collider other)
     {
-        TryConsume(other != null ? other.gameObject : null);
+        TryCollect(other != null ? other.gameObject : null);
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        TryConsume(other != null ? other.gameObject : null);
+        TryCollect(other != null ? other.gameObject : null);
     }
 
-    private void TryConsume(GameObject otherObject)
+    private void TryCollect(GameObject otherObject)
     {
-        if (consumed || otherObject == null)
+        if (collected || otherObject == null)
         {
             return;
         }
@@ -54,18 +69,13 @@ public class GrassPickup : MonoBehaviour
             return;
         }
 
-        HungerSystem hungerSystem = goatController.GetComponent<HungerSystem>();
-        if (hungerSystem == null)
-        {
-            hungerSystem = goatController.GetComponentInParent<HungerSystem>();
-        }
+        collected = true;
 
-        if (hungerSystem != null)
+        if (GameManager.Instance != null)
         {
-            hungerSystem.ReduceHunger(hungerReduceAmount);
+            GameManager.Instance.AddCoin(coinValue);
+            GameManager.Instance.AddScore(1);
         }
-
-        consumed = true;
 
         if (consumedVisual != null)
         {
