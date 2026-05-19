@@ -199,7 +199,7 @@ public class PlayerController : MonoBehaviour
     private Vector2Int ClampGrid(Vector2Int grid)
     {
         return new Vector2Int(
-            Mathf.Clamp(grid.x, minGrid.x, maxGrid.x),
+            grid.x,
             Mathf.Clamp(grid.y, minGrid.y, maxGrid.y));
     }
 }

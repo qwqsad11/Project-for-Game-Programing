@@ -70,7 +70,12 @@ public class Tile : MonoBehaviour
 
     public virtual void OnPlayerLanded(PlayerController player)
     {
-        ApplyLanding(player != null ? player.GetComponent<GoatController>() : null);
+        ApplyLanding(player != null ? player.GetComponent<GoatMovement>() : null);
+    }
+
+    public virtual void OnPlayerLanded(GoatMovement goat)
+    {
+        ApplyLanding(goat);
     }
 
     public virtual void OnPlayerLanded(GoatController goat)

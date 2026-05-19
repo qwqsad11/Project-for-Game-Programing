@@ -123,11 +123,11 @@ public class SafePlatform : Tile
 
         Color color = kind switch
         {
-            TileType.NormalTile => isMainPath ? new Color(0.48f, 0.82f, 0.44f) : new Color(0.34f, 0.63f, 0.31f),
-            TileType.CrumbleTile => isMainPath ? new Color(0.78f, 0.63f, 0.38f) : new Color(0.63f, 0.50f, 0.30f),
-            TileType.SpringTile => isMainPath ? new Color(0.42f, 0.80f, 0.98f) : new Color(0.35f, 0.63f, 0.78f),
-            TileType.HazardTile => new Color(0.42f, 0.32f, 0.23f),
-            TileType.CoinTile => new Color(0.98f, 0.88f, 0.32f),
+            TileType.NormalTile => isMainPath ? new Color(0.62f, 0.58f, 0.52f) : new Color(0.48f, 0.45f, 0.40f),
+            TileType.CrumbleTile => isMainPath ? new Color(0.70f, 0.62f, 0.54f) : new Color(0.56f, 0.49f, 0.42f),
+            TileType.SpringTile => isMainPath ? new Color(0.66f, 0.74f, 0.78f) : new Color(0.50f, 0.58f, 0.62f),
+            TileType.HazardTile => new Color(0.28f, 0.24f, 0.22f),
+            TileType.CoinTile => new Color(0.92f, 0.82f, 0.34f),
             TileType.EmptyGap => new Color(0.1f, 0.1f, 0.1f, 0.15f),
             _ => Color.white
         };

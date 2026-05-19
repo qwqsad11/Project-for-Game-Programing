@@ -213,7 +213,7 @@ RectTransform:
   m_GameObject: {fileID: 258594829}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1606047852}
@@ -611,11 +611,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 9222726501709179223}
-  isometricOffset: {x: 6.5, y: 8.5, z: -6.5}
-  cameraAngleX: 35
-  cameraAngleY: 45
+  cameraRotation: {x: 0, y: -75, z: 0}
+  followOffset: {x: 40, y: 0, z: -10}
+  lookOffset: {x: 0, y: 1.1, z: 0}
+  lookAheadHeight: 1.2
   smoothTime: 0.18
-  upwardBias: 2.25
+  centerTargetOnScreen: 1
   targetScreenYOffset: -1.25
   minFollowHeight: 0
   shakeDuration: 0.12
@@ -756,23 +757,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1026077165}
   m_CullTransparentMesh: 1
---- !u!114 &1361662497
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1361662494}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 145c8baaace11bd47aa4c07fc557f9bb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  scoreText: {fileID: 1733387969}
-  highScoreText: {fileID: 1026077167}
-  hungerText: {fileID: 2084616154}
-  coinsText: {fileID: 1419610577}
-  totalCoinsText: {fileID: 541021062}
 --- !u!1 &1419610575
 GameObject:
   m_ObjectHideFlags: 0
@@ -1042,6 +1026,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad008ac1347edb24da46ff8366dc4bc3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  goat: {fileID: 0}
   player: {fileID: 9222726501709179226}
   gridManager: {fileID: 550984304}
   chunkSpawner: {fileID: 264748568}
@@ -1050,12 +1035,13 @@ MonoBehaviour:
   initialRows: 24
   rowsAhead: 18
   rowsBehind: 8
-  extraPlatformChance: 0.35
+  ridgeTurnChance: 0.28
   gapChance: 0.18
+  extraPlatformChance: 0.35
+  terrainDensity: 0.88
   crumbleChance: 0.12
   springChance: 0.05
   hazardChance: 0.08
-  bonusChance: 0.03
 --- !u!1 &1674795835
 GameObject:
   m_ObjectHideFlags: 0
@@ -1384,6 +1370,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 7000000000000000003, guid: 8610743574a819245af11f2814ba0d8c, type: 3}
+      propertyPath: cameraFollow
+      value: 
+      objectReference: {fileID: 963194229}
     - target: {fileID: 8479798530941442597, guid: 8610743574a819245af11f2814ba0d8c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1463,11 +1453,14 @@ MonoBehaviour:
   squashAmount: 0.12
   stretchAmount: 0.12
   springJumpMultiplier: 1.35
+  comboInputWindow: 0.12
   fallDeathY: -8
   spawnProtectionDuration: 0.35
+  worldYOffset: 0.45
   animator: {fileID: 0}
   visualRoot: {fileID: 0}
   cameraFollow: {fileID: 963194229}
+  packAnimationController: {fileID: 0}
 --- !u!136 &9222726501709179216
 CapsuleCollider:
   m_ObjectHideFlags: 0

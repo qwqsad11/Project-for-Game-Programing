@@ -2487,7 +2487,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: 1215e98cc02a91340b3a9af5af091f14, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
-  m_ApplyRootMotion: 1
+  m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_WarningMessage: 
@@ -2507,7 +2507,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e5010bff315c6e4c8a413f69e3d6458, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animator: {fileID: 0}
+  animator: {fileID: 4488131368354554865}
   walkForwardAnimation: walk_forward
   walkBackwardAnimation: walk_backwards
   runForwardAnimation: run_forward
@@ -2525,9 +2525,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 4980728175960791824}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c8f5c0b1d2e4f6a8b9c0d1e2f3a4b5c, type: 3}
+  m_Script: {fileID: 11500000, guid: ac7084d8faa713542840500e2e7a83da, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tileWidth: 1.5
+  tileDepth: 1.5
+  tileHeight: 0.5
   startGrid: {x: 0, y: 0}
   minGrid: {x: -2, y: 0}
   maxGrid: {x: 2, y: 99999}
@@ -2537,6 +2540,8 @@ MonoBehaviour:
   stretchAmount: 0.12
   fallDeathY: -8
   spawnProtectionDuration: 0.5
+  requirePlatformToMove: 1
+  fallIfNoPlatform: 1
   animator: {fileID: 4488131368354554865}
 --- !u!114 &7000000000000000002
 MonoBehaviour:
@@ -2550,6 +2555,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a1b2c3d4e5f60718293a4b5c6d7e8f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cameraFollow: {fileID: 0}
+  worldYOffset: 0.45
 --- !u!114 &7000000000000000003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2562,15 +2569,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ef6db5b21e1ab54d91c523e04bc4570, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tileWidth: 1.5
-  tileDepth: 1.5
-  gridStepY: 0.5
   startGrid: {x: 0, y: 0}
-  minGrid: {x: -2, y: 0}
-  maxGrid: {x: 2, y: 99999}
+  currentGridPosition: {x: 0, y: 0}
+  targetGridPosition: {x: 0, y: 0}
+  jumpDuration: 0.18
+  jumpHeight: 0.95
+  squashAmount: 0.12
+  stretchAmount: 0.12
+  springJumpMultiplier: 1.35
+  comboInputWindow: 0.12
   fallDeathY: -8
   spawnProtectionDuration: 0.5
+  worldYOffset: 0.45
   animator: {fileID: 4488131368354554865}
+  visualRoot: {fileID: 8479798530941442597}
+  cameraFollow: {fileID: 0}
+  packAnimationController: {fileID: 0}
 --- !u!1 &4991923091833278311
 GameObject:
   m_ObjectHideFlags: 0

@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace Ursaanimation.CubicFarmAnimals
 {
+    [RequireComponent(typeof(Animator))]
     public class AnimationController : MonoBehaviour
     {
         public Animator animator;
@@ -14,45 +15,77 @@ namespace Ursaanimation.CubicFarmAnimals
         public string sittostandAnimation = "sit_to_stand";
         public string standtositAnimation = "stand_to_sit";
 
-        void Start()
+        private void Awake()
         {
-            animator = GetComponent<Animator>();
+            if (animator == null)
+            {
+                animator = GetComponent<Animator>();
+            }
+
+            if (animator != null)
+            {
+                animator.applyRootMotion = false;
+            }
         }
 
-        void Update()
+        public void SetAnimator(Animator value)
         {
-            if (Input.GetKeyDown(KeyCode.W))
+            animator = value != null ? value : GetComponent<Animator>();
+        }
+
+        public void PlayIdle()
+        {
+            PlayState("idle");
+        }
+
+        public void PlayWalkForward()
+        {
+            PlayState(walkForwardAnimation);
+        }
+
+        public void PlayWalkBackward()
+        {
+            PlayState(walkBackwardAnimation);
+        }
+
+        public void PlayRunForward()
+        {
+            PlayState(runForwardAnimation);
+        }
+
+        public void PlayTurnLeft()
+        {
+            PlayState(turn90LAnimation);
+        }
+
+        public void PlayTurnRight()
+        {
+            PlayState(turn90RAnimation);
+        }
+
+        public void PlayTrot()
+        {
+            PlayState(trotAnimation);
+        }
+
+        public void PlaySitToStand()
+        {
+            PlayState(sittostandAnimation);
+        }
+
+        public void PlayStandToSit()
+        {
+            PlayState(standtositAnimation);
+        }
+
+        public void PlayState(string stateName)
+        {
+            if (animator == null || string.IsNullOrEmpty(stateName))
             {
-                animator.Play(walkForwardAnimation);
+                return;
             }
-            else if (Input.GetKeyDown(KeyCode.S))
-            {
-                animator.Play(walkBackwardAnimation);
-            }
-            else if (Input.GetKeyDown(KeyCode.Alpha1))
-            {
-                animator.Play(runForwardAnimation);
-            }
-            else if (Input.GetKeyDown(KeyCode.A))
-            {
-                animator.Play(turn90LAnimation);
-            }
-            else if (Input.GetKeyDown(KeyCode.D))
-            {
-                animator.Play(turn90RAnimation);
-            }
-            else if (Input.GetKeyDown(KeyCode.Alpha2))
-            {
-                animator.Play(trotAnimation);
-            }
-            else if (Input.GetKeyDown(KeyCode.Alpha4))
-            {
-                animator.Play(sittostandAnimation);
-            }
-            else if (Input.GetKeyDown(KeyCode.Alpha3))
-            {
-                animator.Play(standtositAnimation);
-            }
+
+            animator.Play(stateName, 0, 0f);
         }
     }
 }
