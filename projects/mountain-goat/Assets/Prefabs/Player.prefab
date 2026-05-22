@@ -2450,6 +2450,7 @@ GameObject:
   - component: {fileID: 7000000000000000001}
   - component: {fileID: 7000000000000000002}
   - component: {fileID: 7000000000000000003}
+  - component: {fileID: 7000000000000000004}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -2484,7 +2485,7 @@ Animator:
   m_GameObject: {fileID: 4980728175960791824}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: 37ab5ee15ddf4eb4d85c2d2b26fc8276, type: 3}
-  m_Controller: {fileID: 9100000, guid: 1215e98cc02a91340b3a9af5af091f14, type: 2}
+  m_Controller: {fileID: 9100000, guid: 1451483b5513cef4e83f6940f91d290e, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -2585,6 +2586,49 @@ MonoBehaviour:
   visualRoot: {fileID: 8479798530941442597}
   cameraFollow: {fileID: 0}
   packAnimationController: {fileID: 0}
+--- !u!114 &7000000000000000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4980728175960791824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c2bb0a6f55c4d14bbd245b88e7c33f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defaultCharacter: 0
+  goatAnimator: {fileID: 4488131368354554865}
+  goatVisualRoots:
+  - {fileID: 2852788379180820330}
+  - {fileID: 8736641328598552304}
+  animalVisuals:
+  - character: 1
+    prefab: {fileID: 1019569807689630, guid: 31232edd50bea4a4c98cf6b60f98bcf5, type: 3}
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 180, z: 0}
+    localScale: {x: 0.85, y: 0.85, z: 0.85}
+  - character: 2
+    prefab: {fileID: 1827988484473126, guid: b58846aead748844a8311f61b2a6985f, type: 3}
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 180, z: 0}
+    localScale: {x: 0.85, y: 0.85, z: 0.85}
+  - character: 3
+    prefab: {fileID: 1469362139191444, guid: 42a96e9e197d85c4caab5a7788fcf780, type: 3}
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 180, z: 0}
+    localScale: {x: 0.8, y: 0.8, z: 0.8}
+  - character: 4
+    prefab: {fileID: 1285316864343350, guid: 4ea409bb7e41261488263e099c27e0fe, type: 3}
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 180, z: 0}
+    localScale: {x: 0.8, y: 0.8, z: 0.8}
+  - character: 5
+    prefab: {fileID: 1252666402916706, guid: 87df6cb86b0f78744acf059601c574ee, type: 3}
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 180, z: 0}
+    localScale: {x: 0.9, y: 0.9, z: 0.9}
 --- !u!1 &4991923091833278311
 GameObject:
   m_ObjectHideFlags: 0

@@ -42,7 +42,7 @@ public class SimpleMenuUI : MonoBehaviour
 
     private void BindButtons()
     {
-        Button[] buttons = GetComponentsInChildren<Button>(true);
+        Button[] buttons = GetMenuButtons();
         for (int i = 0; i < buttons.Length; i++)
         {
             Button button = buttons[i];
@@ -56,8 +56,13 @@ public class SimpleMenuUI : MonoBehaviour
             button.onClick.RemoveListener(ReturnToMenu);
             button.onClick.RemoveListener(RestartGame);
             button.onClick.RemoveListener(QuitGame);
+            button.onClick.RemoveListener(ChooseCharacter);
 
-            if (buttonName.Contains("Start"))
+            if (buttonName.Contains("CharacterChoose"))
+            {
+                button.onClick.AddListener(ChooseCharacter);
+            }
+            else if (buttonName.Contains("Start"))
             {
                 button.onClick.AddListener(StartGame);
             }
@@ -76,10 +81,27 @@ public class SimpleMenuUI : MonoBehaviour
         }
     }
 
+    private Button[] GetMenuButtons()
+    {
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas != null)
+        {
+            return canvas.GetComponentsInChildren<Button>(true);
+        }
+
+        return GetComponentsInChildren<Button>(true);
+    }
+
     public void StartGame()
     {
         Debug.Log("SimpleMenuUI: StartGame clicked");
         GameManager.Instance.StartGame();
+    }
+
+    public void ChooseCharacter()
+    {
+        Debug.Log("SimpleMenuUI: CharacterChoose clicked");
+        GameManager.Instance.ChooseCharacter();
     }
 
     public void ReturnToMenu()

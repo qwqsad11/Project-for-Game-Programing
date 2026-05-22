@@ -6,10 +6,11 @@ using TMPro;
 
 public class GameManager : MonoBehaviour
 {
-    public enum GameState { Menu, Playing, GameOver, Paused }
+    public enum GameState { Menu, CharacterSelect, Playing, GameOver, Paused }
 
     [Header("Scene Names")]
     [SerializeField] private string mainMenuSceneName = "MainMenu";
+    [SerializeField] private string characterSelectSceneName = "CharacterSelect";
     [SerializeField] private string gameplaySceneName = "GamePlay";
     [SerializeField] private string gameOverSceneName = "GameOver";
     [SerializeField] private bool forceMenuOnPlay = true;
@@ -58,7 +59,8 @@ public class GameManager : MonoBehaviour
         LoadHighScore();
         LoadTotalCoins();
 
-        if (forceMenuOnPlay && SceneManager.GetActiveScene().name != mainMenuSceneName)
+        string activeSceneName = SceneManager.GetActiveScene().name;
+        if (forceMenuOnPlay && activeSceneName != mainMenuSceneName && activeSceneName != characterSelectSceneName)
         {
             currentState = GameState.Menu;
             Time.timeScale = 1f;
@@ -96,6 +98,9 @@ public class GameManager : MonoBehaviour
             case GameState.Playing:
                 HandlePlayingState();
                 break;
+            case GameState.CharacterSelect:
+                HandleCharacterSelectState();
+                break;
             case GameState.GameOver:
                 HandleGameOverState();
                 break;
@@ -120,6 +125,12 @@ public class GameManager : MonoBehaviour
         OnCoinsChanged?.Invoke(SessionCoins, TotalCoins);
         NotifyHungerChanged(0f, MaxHunger <= 0f ? 100f : MaxHunger);
         LoadSceneIfNeeded(gameplaySceneName);
+    }
+
+    private void HandleCharacterSelectState()
+    {
+        Time.timeScale = 1f;
+        LoadSceneIfNeeded(characterSelectSceneName);
     }
 
     private void HandleGameOverState()
@@ -156,6 +167,7 @@ public class GameManager : MonoBehaviour
 
         SessionCoins += amount;
         TotalCoins += amount;
+        SaveTotalCoins();
         OnCoinsChanged?.Invoke(SessionCoins, TotalCoins);
     }
 
@@ -165,6 +177,16 @@ public class GameManager : MonoBehaviour
     }
 
     public void StartGame()
+    {
+        ChangeState(GameState.Playing);
+    }
+
+    public void ChooseCharacter()
+    {
+        ChangeState(GameState.CharacterSelect);
+    }
+
+    public void StartGameplay()
     {
         ChangeState(GameState.Playing);
     }
@@ -246,6 +268,12 @@ public class GameManager : MonoBehaviour
             EnsureGameplaySceneContent();
         }
 
+        if (scene.name == characterSelectSceneName)
+        {
+            EnsureEventSystem();
+            EnsureDirectionalLight();
+        }
+
         if (scene.name == gameplaySceneName)
         {
             CameraFollow cameraFollow = FindObjectOfType<CameraFollow>();
@@ -268,6 +296,10 @@ public class GameManager : MonoBehaviour
         if (activeSceneName == gameplaySceneName)
         {
             currentState = GameState.Playing;
+        }
+        else if (activeSceneName == characterSelectSceneName)
+        {
+            currentState = GameState.CharacterSelect;
         }
         else if (activeSceneName == gameOverSceneName)
         {

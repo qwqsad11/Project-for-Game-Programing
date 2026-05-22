@@ -5,9 +5,12 @@ public class SafePlatform : Tile
     [Header("Collectibles")]
     [SerializeField, Range(0f, 1f)] private float grassPickupChance = 0.2f;
     [SerializeField, Range(0f, 1f)] private float coinPickupChance = 0.1f;
+    [SerializeField, Range(0f, 1f)] private float treasureChestChance = 0.04f;
     [SerializeField] private float pickupYOffset = 0.65f;
+    [SerializeField] private float treasureChestYOffset = 0.45f;
     [SerializeField] private GameObject grassPickupPrefab;
     [SerializeField] private GameObject coinPickupPrefab;
+    [SerializeField] private GameObject treasureChestPrefab;
 
     [SerializeField] private Renderer[] renderers;
 
@@ -59,11 +62,15 @@ public class SafePlatform : Tile
         float roll = Random.value;
         GameObject pickupPrefab = null;
 
-        if (roll < coinPickupChance)
+        if (roll < treasureChestChance)
+        {
+            pickupPrefab = treasureChestPrefab;
+        }
+        else if (roll < treasureChestChance + coinPickupChance)
         {
             pickupPrefab = coinPickupPrefab;
         }
-        else if (roll < coinPickupChance + grassPickupChance)
+        else if (roll < treasureChestChance + coinPickupChance + grassPickupChance)
         {
             pickupPrefab = grassPickupPrefab;
         }
@@ -74,7 +81,8 @@ public class SafePlatform : Tile
         }
 
         attachedPickupInstance = Instantiate(pickupPrefab, transform);
-        attachedPickupInstance.transform.localPosition = new Vector3(0f, pickupYOffset, 0f);
+        bool isTreasureChest = pickupPrefab == treasureChestPrefab;
+        attachedPickupInstance.transform.localPosition = new Vector3(0f, isTreasureChest ? treasureChestYOffset : pickupYOffset, 0f);
         attachedPickupInstance.transform.localRotation = Quaternion.identity;
 
         Collider pickupCollider = attachedPickupInstance.GetComponent<Collider>();
@@ -87,6 +95,22 @@ public class SafePlatform : Tile
         if (pickupCollider2D != null)
         {
             pickupCollider2D.isTrigger = true;
+        }
+
+        if (pickupPrefab == coinPickupPrefab && attachedPickupInstance.GetComponent<CoinPickup>() == null)
+        {
+            attachedPickupInstance.AddComponent<CoinPickup>();
+        }
+
+        if (isTreasureChest && attachedPickupInstance.GetComponent<TreasureChestPickup>() == null)
+        {
+            attachedPickupInstance.AddComponent<TreasureChestPickup>();
+        }
+
+        CoinPickup coinPickup = attachedPickupInstance.GetComponent<CoinPickup>();
+        if (coinPickup != null)
+        {
+            coinPickup.ResetAnimationOrigin();
         }
     }
 
@@ -110,6 +134,11 @@ public class SafePlatform : Tile
         if (coinPickupPrefab == null)
         {
             coinPickupPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Coin.prefab");
+        }
+
+        if (treasureChestPrefab == null)
+        {
+            treasureChestPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TreasureChest/Prefabs/TreasureChest_0.prefab");
         }
 #endif
     }

@@ -982,6 +982,8 @@ MonoBehaviour:
   hungerText: {fileID: 2084616154}
   coinsText: {fileID: 1419610577}
   totalCoinsText: {fileID: 541021062}
+  coinPopScale: 1.25
+  coinPopDuration: 0.16
 --- !u!1 &1650613620
 GameObject:
   m_ObjectHideFlags: 0
@@ -1027,18 +1029,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   goat: {fileID: 0}
-  player: {fileID: 9222726501709179226}
+  player: {fileID: 0}
   gridManager: {fileID: 550984304}
   chunkSpawner: {fileID: 264748568}
-  pathGenerator: {fileID: 1674795836}
-  halfWidth: 2
-  initialRows: 24
-  rowsAhead: 18
-  rowsBehind: 8
-  ridgeTurnChance: 0.28
-  gapChance: 0.18
-  extraPlatformChance: 0.35
-  terrainDensity: 0.88
+  visibleAreaSize: 30
+  recenterThreshold: 2
+  safePlatformOnly: 1
   crumbleChance: 0.12
   springChance: 0.05
   hazardChance: 0.08
@@ -1445,22 +1441,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ef6db5b21e1ab54d91c523e04bc4570, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startGrid: {x: 0, y: 0}
-  currentGridPosition: {x: 0, y: 0}
-  targetGridPosition: {x: 0, y: 0}
-  jumpDuration: 0.18
-  jumpHeight: 0.95
-  squashAmount: 0.12
-  stretchAmount: 0.12
-  springJumpMultiplier: 1.35
-  comboInputWindow: 0.12
-  fallDeathY: -8
-  spawnProtectionDuration: 0.35
-  worldYOffset: 0.45
-  animator: {fileID: 0}
-  visualRoot: {fileID: 0}
-  cameraFollow: {fileID: 963194229}
-  packAnimationController: {fileID: 0}
+  currentGrid: {x: 0, y: 0}
+  canDie: 1
 --- !u!136 &9222726501709179216
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1505,17 +1487,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8479798530941442597, guid: 8610743574a819245af11f2814ba0d8c, type: 3}
   m_PrefabInstance: {fileID: 4006541122894678949}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &9222726501709179226 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7000000000000000001, guid: 8610743574a819245af11f2814ba0d8c, type: 3}
-  m_PrefabInstance: {fileID: 4006541122894678949}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9222726501709179214}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c8f5c0b1d2e4f6a8b9c0d1e2f3a4b5c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
