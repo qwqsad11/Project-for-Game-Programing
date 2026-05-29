@@ -5,11 +5,10 @@ using UnityEngine;
 public class TreasureChestPickup : MonoBehaviour
 {
     [Header("Reward")]
-    [SerializeField] private int minCoins = 5;
-    [SerializeField] private int maxCoins = 20;
+    [SerializeField] private int coinReward = 10;
 
     [Header("Feedback")]
-    [SerializeField] private bool destroyAfterOpen;
+    [SerializeField] private bool destroyAfterOpen = true;
     [SerializeField] private float openScalePunch = 1.15f;
     [SerializeField] private Color coinBurstColor = new Color(1f, 0.72f, 0.08f, 1f);
 
@@ -38,15 +37,14 @@ public class TreasureChestPickup : MonoBehaviour
             chestCollider.enabled = false;
         }
 
-        int reward = Random.Range(Mathf.Min(minCoins, maxCoins), Mathf.Max(minCoins, maxCoins) + 1);
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.AddCoin(reward);
-            GameManager.Instance.AddScore(reward);
+            GameManager.Instance.AddCoin(coinReward);
+            GameManager.Instance.AddScore(coinReward);
         }
 
         PlayOpenAnimation();
-        SpawnCoinBurst(reward);
+        SpawnCoinBurst(coinReward);
         StartCoroutine(OpenFeedbackRoutine());
         return true;
     }

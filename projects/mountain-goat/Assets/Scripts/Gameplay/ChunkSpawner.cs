@@ -6,6 +6,7 @@ public class ChunkSpawner : MonoBehaviour
     [Header("Prefab")]
     [SerializeField] private GameObject safePlatformPrefab;
     [SerializeField] private GameObject crumblePlatformPrefab;
+    [SerializeField] private GameObject dangerousPlatformPrefab;
     [SerializeField] private GameObject obstaclePrefab;
     [SerializeField] private GameObject bonusPrefab;
 
@@ -130,7 +131,7 @@ public class ChunkSpawner : MonoBehaviour
         GameObject prefab = kind switch
         {
             PlatformKind.Grass => safePlatformPrefab,
-            PlatformKind.Crumble => crumblePlatformPrefab != null ? crumblePlatformPrefab : safePlatformPrefab,
+            PlatformKind.Crumble => ResolveDangerousPlatformPrefab(),
             PlatformKind.Spring => safePlatformPrefab,
             PlatformKind.Hazard => obstaclePrefab != null ? obstaclePrefab : safePlatformPrefab,
             PlatformKind.Coin => bonusPrefab != null ? bonusPrefab : safePlatformPrefab,
@@ -155,6 +156,23 @@ public class ChunkSpawner : MonoBehaviour
         }
 
         return runtimePrefab;
+    }
+
+    private GameObject ResolveDangerousPlatformPrefab()
+    {
+        if (dangerousPlatformPrefab != null)
+        {
+            return dangerousPlatformPrefab;
+        }
+
+        GameObject editorPrefab = LoadEditorPrefab(PlatformKind.Crumble);
+        if (editorPrefab != null)
+        {
+            dangerousPlatformPrefab = editorPrefab;
+            return dangerousPlatformPrefab;
+        }
+
+        return crumblePlatformPrefab != null ? crumblePlatformPrefab : safePlatformPrefab;
     }
 
     private GameObject CreateRuntimePrefab(PlatformKind kind)
@@ -197,7 +215,7 @@ public class ChunkSpawner : MonoBehaviour
         string path = kind switch
         {
             PlatformKind.Grass => "Assets/Prefabs/SafePlatform.prefab",
-            PlatformKind.Crumble => "Assets/Prefabs/SafePlatform.prefab",
+            PlatformKind.Crumble => "Assets/Prefabs/DangerousPlatform.prefab",
             PlatformKind.Spring => "Assets/Prefabs/SafePlatform.prefab",
             PlatformKind.Hazard => "Assets/Prefabs/SafePlatform.prefab",
             PlatformKind.Coin => "Assets/Prefabs/Coin.prefab",

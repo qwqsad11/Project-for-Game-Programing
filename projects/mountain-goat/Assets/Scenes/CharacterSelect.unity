@@ -167,38 +167,63 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   options:
   - character: 0
-    label: Goat
-    previewPrefab: {fileID: 4980728175960791824, guid: 8610743574a819245af11f2814ba0d8c, type: 3}
-    previewPosition: {x: -3, y: -0.35, z: 0}
-    previewEulerAngles: {x: 0, y: 160, z: 0}
+    label: White Goat
+    previewPrefab: {fileID: 6885452974112614176, guid: 1f8729ffe5e3ebb45b5c6b50bc6a2cec, type: 3}
+    previewPosition: {x: 0, y: 0, z: 0}
+    previewEulerAngles: {x: 0, y: 180, z: 0}
     previewScale: {x: 1.6, y: 1.6, z: 1.6}
   - character: 1
+    label: Dark Goat
+    previewPrefab: {fileID: 4026167085268298930, guid: 3edcf70af3303894482eb673a57b1198, type: 3}
+    previewPosition: {x: 0, y: 0, z: 0}
+    previewEulerAngles: {x: 0, y: 180, z: 0}
+    previewScale: {x: 1.6, y: 1.6, z: 1.6}
+  - character: 2
+    label: White Sheep
+    previewPrefab: {fileID: 6517686061769116559, guid: f32fc89859f16ec49bc857008a5ed9c5, type: 3}
+    previewPosition: {x: 0, y: 0, z: 0}
+    previewEulerAngles: {x: 0, y: 180, z: 0}
+    previewScale: {x: 1.6, y: 1.6, z: 1.6}
+  - character: 3
+    label: Cream Sheep
+    previewPrefab: {fileID: 1868461998570734802, guid: d4d6ee78313566d4fb5c9a6ce2e66e80, type: 3}
+    previewPosition: {x: 0, y: 0, z: 0}
+    previewEulerAngles: {x: 0, y: 180, z: 0}
+    previewScale: {x: 1.6, y: 1.6, z: 1.6}
+  - character: 4
+    label: Dark Sheep
+    previewPrefab: {fileID: 4803590418286029818, guid: 89340c34cb7cd124883d3f31b9835bfd, type: 3}
+    previewPosition: {x: 0, y: 0, z: 0}
+    previewEulerAngles: {x: 0, y: 180, z: 0}
+    previewScale: {x: 1.6, y: 1.6, z: 1.6}
+  - character: 6
     label: Deer
     previewPrefab: {fileID: 1019569807689630, guid: 31232edd50bea4a4c98cf6b60f98bcf5, type: 3}
     previewPosition: {x: 0, y: -0.35, z: 0}
     previewEulerAngles: {x: 0, y: 160, z: 0}
     previewScale: {x: 1.2, y: 1.2, z: 1.2}
-  - character: 2
+  - character: 7
     label: Deer Female
     previewPrefab: {fileID: 1827988484473126, guid: b58846aead748844a8311f61b2a6985f, type: 3}
-    previewPosition: {x: 3, y: -0.35, z: 0}
+    previewPosition: {x: 0, y: -0.35, z: 0}
     previewEulerAngles: {x: 0, y: 160, z: 0}
     previewScale: {x: 1.2, y: 1.2, z: 1.2}
-  - character: 3
+  - character: 8
     label: Elk
     previewPrefab: {fileID: 1469362139191444, guid: 42a96e9e197d85c4caab5a7788fcf780, type: 3}
-    previewPosition: {x: -3, y: -1.95, z: 0}
+    previewPosition: {x: 0, y: -0.35, z: 0}
     previewEulerAngles: {x: 0, y: 160, z: 0}
     previewScale: {x: 1.05, y: 1.05, z: 1.05}
-  - character: 4
+  - character: 9
     label: Elk Albine
     previewPrefab: {fileID: 1285316864343350, guid: 4ea409bb7e41261488263e099c27e0fe, type: 3}
-    previewPosition: {x: 0, y: -1.95, z: 0}
+    previewPosition: {x: 0, y: -0.35, z: 0}
     previewEulerAngles: {x: 0, y: 160, z: 0}
     previewScale: {x: 1.05, y: 1.05, z: 1.05}
   - character: 5
     label: Fawn
     previewPrefab: {fileID: 1252666402916706, guid: 87df6cb86b0f78744acf059601c574ee, type: 3}
-    previewPosition: {x: 3, y: -1.95, z: 0}
+    previewPosition: {x: 0, y: -0.35, z: 0}
     previewEulerAngles: {x: 0, y: 160, z: 0}
     previewScale: {x: 1.3, y: 1.3, z: 1.3}
+  previewAnchor: {x: 0, y: -0.55, z: 0}

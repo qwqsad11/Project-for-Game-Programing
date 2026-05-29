@@ -255,6 +255,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   safePlatformPrefab: {fileID: 1635426308758110852, guid: 0a6e1b4cec894e74d96344e3b0555549, type: 3}
   crumblePlatformPrefab: {fileID: 3232161663204846402, guid: 17dd681e06fb3d04eba2611e93af7775, type: 3}
+  dangerousPlatformPrefab: {fileID: 1635426308758110852, guid: 7dd6da7129a0724419e8d590b27e34df, type: 3}
   obstaclePrefab: {fileID: 3232161663204846402, guid: 17dd681e06fb3d04eba2611e93af7775, type: 3}
   bonusPrefab: {fileID: 7177207604694151566, guid: a3a3916d9c554a34aae82a88fffbd067, type: 3}
   spawnedRoot: {fileID: 0}
@@ -1038,6 +1039,7 @@ MonoBehaviour:
   crumbleChance: 0.12
   springChance: 0.05
   hazardChance: 0.08
+  dangerousPlatformChance: 0.08
 --- !u!1 &1674795835
 GameObject:
   m_ObjectHideFlags: 0

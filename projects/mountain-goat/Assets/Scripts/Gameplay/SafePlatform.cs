@@ -5,7 +5,7 @@ public class SafePlatform : Tile
     [Header("Collectibles")]
     [SerializeField, Range(0f, 1f)] private float grassPickupChance = 0.2f;
     [SerializeField, Range(0f, 1f)] private float coinPickupChance = 0.1f;
-    [SerializeField, Range(0f, 1f)] private float treasureChestChance = 0.04f;
+    [SerializeField, Range(0f, 1f)] private float treasureChestChance = 0.02f;
     [SerializeField] private float pickupYOffset = 0.65f;
     [SerializeField] private float treasureChestYOffset = 0.45f;
     [SerializeField] private GameObject grassPickupPrefab;
@@ -18,7 +18,12 @@ public class SafePlatform : Tile
     private Vector3 baseScale = Vector3.one;
     private GameObject attachedPickupInstance;
 
-    private void Awake()
+    protected virtual float GrassPickupChance => grassPickupChance;
+    protected virtual float CoinPickupChance => coinPickupChance;
+    protected virtual float TreasureChestChance => treasureChestChance;
+    protected virtual bool CanSpawnGrassPickup => true;
+
+    protected virtual void Awake()
     {
         propertyBlock = new MaterialPropertyBlock();
         baseScale = transform.localScale;
@@ -52,7 +57,7 @@ public class SafePlatform : Tile
         base.Recycle();
     }
 
-    private void TrySpawnPickup()
+    protected virtual void TrySpawnPickup()
     {
         if (Kind == PlatformKind.Hazard || Kind == PlatformKind.Gap)
         {
@@ -62,15 +67,15 @@ public class SafePlatform : Tile
         float roll = Random.value;
         GameObject pickupPrefab = null;
 
-        if (roll < treasureChestChance)
+        if (roll < TreasureChestChance)
         {
             pickupPrefab = treasureChestPrefab;
         }
-        else if (roll < treasureChestChance + coinPickupChance)
+        else if (roll < TreasureChestChance + CoinPickupChance)
         {
             pickupPrefab = coinPickupPrefab;
         }
-        else if (roll < treasureChestChance + coinPickupChance + grassPickupChance)
+        else if (CanSpawnGrassPickup && roll < TreasureChestChance + CoinPickupChance + GrassPickupChance)
         {
             pickupPrefab = grassPickupPrefab;
         }
@@ -114,7 +119,7 @@ public class SafePlatform : Tile
         }
     }
 
-    private void ClearAttachedPickup()
+    protected void ClearAttachedPickup()
     {
         if (attachedPickupInstance != null)
         {
@@ -143,7 +148,7 @@ public class SafePlatform : Tile
 #endif
     }
 
-    private void ApplyKindVisual(TileType kind, bool isMainPath)
+    protected void ApplyKindVisual(TileType kind, bool isMainPath)
     {
         if (renderers == null)
         {

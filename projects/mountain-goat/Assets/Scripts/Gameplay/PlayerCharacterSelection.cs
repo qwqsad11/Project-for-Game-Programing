@@ -7,11 +7,15 @@ public class PlayerCharacterSelection : MonoBehaviour
     public enum Character
     {
         Goat = 0,
-        Deer = 1,
-        DeerFemale = 2,
-        Elk = 3,
-        ElkAlbine = 4,
-        Fawn = 5
+        GoatDark = 1,
+        SheepWhite = 2,
+        SheepCream = 3,
+        SheepDark = 4,
+        Fawn = 5,
+        Deer = 6,
+        DeerFemale = 7,
+        Elk = 8,
+        ElkAlbine = 9
     }
 
     [Header("Selection")]
@@ -40,6 +44,15 @@ public class PlayerCharacterSelection : MonoBehaviour
     [Header("Animal Visuals")]
     [SerializeField] private CharacterVisual[] animalVisuals;
 
+    private static readonly string[] IdleStateNames =
+    {
+        "idle",
+        "DIdle 1",
+        "DIdle Look",
+        "DIdle Scratch",
+        "DIdle Head Shake"
+    };
+
     private GameObject activeAnimalInstance;
 
     private void Awake()
@@ -54,16 +67,16 @@ public class PlayerCharacterSelection : MonoBehaviour
 
     public void ApplySelection(Character character)
     {
-        if (character == Character.Goat)
-        {
-            UseGoat();
-            return;
-        }
-
         CharacterVisual visual = FindVisual(character);
         if (visual != null && visual.Prefab != null)
         {
             UseAnimal(visual);
+            return;
+        }
+
+        if (character == Character.Goat)
+        {
+            UseGoat();
             return;
         }
 
@@ -96,6 +109,12 @@ public class PlayerCharacterSelection : MonoBehaviour
         {
             movement.SetAnimator(goatAnimator != null ? goatAnimator : GetComponent<Animator>());
         }
+
+        PlayerMovement playerMovement = GetComponent<PlayerMovement>();
+        if (playerMovement != null)
+        {
+            playerMovement.SetAnimator(goatAnimator != null ? goatAnimator : GetComponentInChildren<Animator>());
+        }
     }
 
     private void UseAnimal(CharacterVisual visual)
@@ -120,12 +139,19 @@ public class PlayerCharacterSelection : MonoBehaviour
         if (animalAnimator != null)
         {
             animalAnimator.applyRootMotion = false;
+            PlayIdle(animalAnimator);
         }
 
         GoatMovement movement = GetComponent<GoatMovement>();
         if (movement != null)
         {
             movement.SetAnimator(animalAnimator);
+        }
+
+        PlayerMovement playerMovement = GetComponent<PlayerMovement>();
+        if (playerMovement != null)
+        {
+            playerMovement.SetAnimator(animalAnimator);
         }
     }
 
@@ -140,6 +166,25 @@ public class PlayerCharacterSelection : MonoBehaviour
         }
 
         return null;
+    }
+
+    private static void PlayIdle(Animator animator)
+    {
+        if (animator == null || animator.runtimeAnimatorController == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < IdleStateNames.Length; i++)
+        {
+            int stateHash = Animator.StringToHash(IdleStateNames[i]);
+            if (animator.HasState(0, stateHash))
+            {
+                animator.Play(stateHash, 0, 0f);
+                animator.Update(0f);
+                return;
+            }
+        }
     }
 
     private void SetGoatVisualsActive(bool active)

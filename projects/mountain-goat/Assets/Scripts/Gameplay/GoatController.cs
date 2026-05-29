@@ -18,6 +18,15 @@ public class GoatController : MonoBehaviour
     {
     }
 
+    public virtual void ForceDie()
+    {
+        Die();
+    }
+
+    public virtual void TakeHit()
+    {
+    }
+
     public virtual void ApplySpringBoost()
     {
     }

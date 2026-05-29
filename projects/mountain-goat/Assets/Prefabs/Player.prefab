@@ -2604,31 +2604,56 @@ MonoBehaviour:
   - {fileID: 2852788379180820330}
   - {fileID: 8736641328598552304}
   animalVisuals:
+  - character: 0
+    prefab: {fileID: 6885452974112614176, guid: 1f8729ffe5e3ebb45b5c6b50bc6a2cec, type: 3}
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 180, z: 0}
+    localScale: {x: 0.85, y: 0.85, z: 0.85}
   - character: 1
-    prefab: {fileID: 1019569807689630, guid: 31232edd50bea4a4c98cf6b60f98bcf5, type: 3}
+    prefab: {fileID: 4026167085268298930, guid: 3edcf70af3303894482eb673a57b1198, type: 3}
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 180, z: 0}
     localScale: {x: 0.85, y: 0.85, z: 0.85}
   - character: 2
-    prefab: {fileID: 1827988484473126, guid: b58846aead748844a8311f61b2a6985f, type: 3}
+    prefab: {fileID: 6517686061769116559, guid: f32fc89859f16ec49bc857008a5ed9c5, type: 3}
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 180, z: 0}
     localScale: {x: 0.85, y: 0.85, z: 0.85}
   - character: 3
-    prefab: {fileID: 1469362139191444, guid: 42a96e9e197d85c4caab5a7788fcf780, type: 3}
+    prefab: {fileID: 1868461998570734802, guid: d4d6ee78313566d4fb5c9a6ce2e66e80, type: 3}
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 180, z: 0}
-    localScale: {x: 0.8, y: 0.8, z: 0.8}
+    localScale: {x: 0.85, y: 0.85, z: 0.85}
   - character: 4
-    prefab: {fileID: 1285316864343350, guid: 4ea409bb7e41261488263e099c27e0fe, type: 3}
+    prefab: {fileID: 4803590418286029818, guid: 89340c34cb7cd124883d3f31b9835bfd, type: 3}
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 180, z: 0}
-    localScale: {x: 0.8, y: 0.8, z: 0.8}
+    localScale: {x: 0.85, y: 0.85, z: 0.85}
   - character: 5
     prefab: {fileID: 1252666402916706, guid: 87df6cb86b0f78744acf059601c574ee, type: 3}
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 180, z: 0}
     localScale: {x: 0.9, y: 0.9, z: 0.9}
+  - character: 6
+    prefab: {fileID: 1019569807689630, guid: 31232edd50bea4a4c98cf6b60f98bcf5, type: 3}
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 180, z: 0}
+    localScale: {x: 0.85, y: 0.85, z: 0.85}
+  - character: 7
+    prefab: {fileID: 1827988484473126, guid: b58846aead748844a8311f61b2a6985f, type: 3}
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 180, z: 0}
+    localScale: {x: 0.85, y: 0.85, z: 0.85}
+  - character: 8
+    prefab: {fileID: 1469362139191444, guid: 42a96e9e197d85c4caab5a7788fcf780, type: 3}
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 180, z: 0}
+    localScale: {x: 0.8, y: 0.8, z: 0.8}
+  - character: 9
+    prefab: {fileID: 1285316864343350, guid: 4ea409bb7e41261488263e099c27e0fe, type: 3}
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 180, z: 0}
+    localScale: {x: 0.8, y: 0.8, z: 0.8}
 --- !u!1 &4991923091833278311
 GameObject:
   m_ObjectHideFlags: 0

@@ -18,8 +18,16 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float crumbleChance = 0.12f;
     [SerializeField, Range(0f, 1f)] private float springChance = 0.05f;
     [SerializeField, Range(0f, 1f)] private float hazardChance = 0.04f;
+    [SerializeField, Range(0f, 1f)] private float dangerousPlatformChance = 0.08f;
+
+    [Header("Thunderclouds")]
+    [SerializeField] private GameObject thundercloudPrefab;
+    [SerializeField, Range(0f, 1f)] private float thundercloudChance = 0.08f;
+    [SerializeField] private int thundercloudMinY = 4;
+    [SerializeField] private Vector3 thundercloudOffset = new Vector3(0f, 1.8f, 0f);
 
     private readonly Dictionary<Vector2Int, Tile> activeTiles = new Dictionary<Vector2Int, Tile>();
+    private readonly Dictionary<Vector2Int, ThundercloudHazard> activeThunderclouds = new Dictionary<Vector2Int, ThundercloudHazard>();
     private readonly HashSet<Vector2Int> generatedCells = new HashSet<Vector2Int>();
     private readonly HashSet<Vector2Int> protectedCells = new HashSet<Vector2Int>();
     private Vector2Int windowCenter;
@@ -117,6 +125,11 @@ public class LevelGenerator : MonoBehaviour
 
     private TileType PickTileKind(Vector2Int gridPosition, bool isMainPath)
     {
+        if (!isMainPath && gridPosition.y > 1 && Random.value < dangerousPlatformChance)
+        {
+            return TileType.CrumbleTile;
+        }
+
         if (safePlatformOnly || gridPosition.y <= 1 || isMainPath)
         {
             return TileType.NormalTile;
@@ -154,7 +167,45 @@ public class LevelGenerator : MonoBehaviour
         if (tile != null)
         {
             activeTiles[gridPosition] = tile;
+            TrySpawnThundercloud(gridPosition, isMainPath);
         }
+    }
+
+    private void TrySpawnThundercloud(Vector2Int gridPosition, bool isMainPath)
+    {
+        if (gridPosition.y < thundercloudMinY || activeThunderclouds.ContainsKey(gridPosition))
+        {
+            return;
+        }
+
+        if (isMainPath && GridDistance(gridPosition, windowCenter) <= 1)
+        {
+            return;
+        }
+
+        if (Random.value >= thundercloudChance)
+        {
+            return;
+        }
+
+        GameObject prefab = ResolveThundercloudPrefab();
+        if (prefab == null)
+        {
+            return;
+        }
+
+        Vector3 tilePosition = GridManager.Instance != null
+            ? GridManager.Instance.GridToWorld(gridPosition)
+            : IsoGrid.ToWorld(gridPosition, 1.5f, 0.75f, 0.5f);
+        GameObject instance = Instantiate(prefab, tilePosition + thundercloudOffset, Quaternion.identity, transform);
+        ThundercloudHazard hazard = instance.GetComponent<ThundercloudHazard>();
+        if (hazard == null)
+        {
+            hazard = instance.AddComponent<ThundercloudHazard>();
+        }
+
+        hazard.Initialize(gridPosition);
+        activeThunderclouds[gridPosition] = hazard;
     }
 
     private void PruneOutsideWindow(Vector2Int centerGrid)
@@ -186,6 +237,7 @@ public class LevelGenerator : MonoBehaviour
                 chunkSpawner.Recycle(grid);
             }
 
+            RecycleThundercloud(grid);
             activeTiles.Remove(grid);
             generatedCells.Remove(grid);
             protectedCells.Remove(grid);
@@ -213,9 +265,29 @@ public class LevelGenerator : MonoBehaviour
             activeTiles.Remove(grid);
         }
 
+        List<Vector2Int> thundercloudKeys = new List<Vector2Int>(activeThunderclouds.Keys);
+        for (int i = 0; i < thundercloudKeys.Count; i++)
+        {
+            RecycleThundercloud(thundercloudKeys[i]);
+        }
+
         generatedCells.Clear();
         protectedCells.Clear();
         hasWindowCenter = false;
+    }
+
+    private void RecycleThundercloud(Vector2Int gridPosition)
+    {
+        if (!activeThunderclouds.TryGetValue(gridPosition, out ThundercloudHazard hazard))
+        {
+            return;
+        }
+
+        activeThunderclouds.Remove(gridPosition);
+        if (hazard != null)
+        {
+            Destroy(hazard.gameObject);
+        }
     }
 
     private void ResolveReferences()
@@ -294,5 +366,18 @@ public class LevelGenerator : MonoBehaviour
     private static bool CanPlaceCell(Vector2Int gridPosition)
     {
         return gridPosition.y >= 0;
+    }
+
+    private GameObject ResolveThundercloudPrefab()
+    {
+        if (thundercloudPrefab != null)
+        {
+            return thundercloudPrefab;
+        }
+
+#if UNITY_EDITOR
+        thundercloudPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Thundercloud_Prewarm.prefab");
+#endif
+        return thundercloudPrefab;
     }
 }

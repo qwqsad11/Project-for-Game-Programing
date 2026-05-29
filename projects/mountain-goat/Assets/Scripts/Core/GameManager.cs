@@ -357,6 +357,13 @@ public class GameManager : MonoBehaviour
             levelGenerator = levelObject.AddComponent<LevelGenerator>();
         }
 
+        RollingObstacleSpawner rollingObstacleSpawner = FindObjectOfType<RollingObstacleSpawner>();
+        if (rollingObstacleSpawner == null)
+        {
+            GameObject rollingObstacleSpawnerObject = new GameObject("RollingObstacleSpawner");
+            rollingObstacleSpawnerObject.AddComponent<RollingObstacleSpawner>();
+        }
+
         GoatController goat = FindObjectOfType<GoatController>();
         if (goat == null)
         {

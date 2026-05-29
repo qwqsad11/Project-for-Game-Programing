@@ -24,13 +24,28 @@ public class CharacterSelectUI : MonoBehaviour
     }
 
     [SerializeField] private CharacterOption[] options;
+    [SerializeField] private Vector3 previewAnchor = new Vector3(0f, -0.55f, 0f);
+
+    private static readonly string[] PreviewIdleStateNames =
+    {
+        "idle",
+        "DIdle 1",
+        "DIdle Look",
+        "DIdle Scratch",
+        "DIdle Head Shake"
+    };
+
+    private GameObject activePreview;
+    private TextMeshProUGUI characterNameText;
+    private int currentIndex;
 
     private void Awake()
     {
         EnsureEventSystem();
         EnsurePreviewCamera();
         BuildUI();
-        BuildPreviews();
+        SelectSavedCharacterIndex();
+        ShowCurrentOption();
     }
 
     private void EnsureEventSystem()
@@ -66,35 +81,81 @@ public class CharacterSelectUI : MonoBehaviour
             canvasRect.offsetMax = Vector2.zero;
         }
 
-        CreateLabel(canvas.transform, "Choose Character", new Vector2(0f, 210f), 42f);
-
-        for (int i = 0; i < options.Length; i++)
-        {
-            int row = i / 3;
-            int col = i % 3;
-            Vector2 position = new Vector2((col - 1) * 210f, 62f - row * 155f);
-            CreateButton(canvas.transform, options[i].Label + "Button", options[i].Label, position, options[i].Character);
-        }
+        CreateLabel(canvas.transform, "Choose Animal", new Vector2(0f, 215f), 42f);
+        CreatePreviewClickArea(canvas.transform);
+        CreateArrowButton(canvas.transform, "PreviousButton", "<", new Vector2(-255f, 0f), -1);
+        CreateArrowButton(canvas.transform, "NextButton", ">", new Vector2(255f, 0f), 1);
+        characterNameText = CreateLabel(canvas.transform, string.Empty, new Vector2(0f, -128f), 34f);
+        CreateConfirmButton(canvas.transform);
 
         CreateBackButton(canvas.transform);
     }
 
-    private void BuildPreviews()
+    private void SelectSavedCharacterIndex()
     {
+        if (options == null || options.Length == 0)
+        {
+            currentIndex = 0;
+            return;
+        }
+
+        PlayerCharacterSelection.Character savedCharacter = PlayerCharacterSelection.GetSavedCharacter();
         for (int i = 0; i < options.Length; i++)
         {
-            if (options[i].PreviewPrefab == null)
+            if (options[i].Character == savedCharacter)
             {
-                continue;
+                currentIndex = i;
+                return;
+            }
+        }
+    }
+
+    private void ShowCurrentOption()
+    {
+        if (options == null || options.Length == 0)
+        {
+            if (characterNameText != null)
+            {
+                characterNameText.text = "No Goat";
             }
 
-            GameObject preview = Instantiate(options[i].PreviewPrefab);
-            preview.name = options[i].Label + " Preview";
-            preview.transform.position = options[i].PreviewPosition;
-            preview.transform.rotation = Quaternion.Euler(options[i].PreviewEulerAngles);
-            preview.transform.localScale = options[i].PreviewScale;
-            StripPreviewBehaviours(preview);
+            return;
         }
+
+        currentIndex = Mathf.Clamp(currentIndex, 0, options.Length - 1);
+        CharacterOption option = options[currentIndex];
+
+        if (activePreview != null)
+        {
+            Destroy(activePreview);
+        }
+
+        if (option.PreviewPrefab != null)
+        {
+            activePreview = Instantiate(option.PreviewPrefab);
+            activePreview.name = option.Label + " Preview";
+            activePreview.transform.position = previewAnchor + option.PreviewPosition;
+            activePreview.transform.rotation = Quaternion.Euler(option.PreviewEulerAngles);
+            activePreview.transform.localScale = option.PreviewScale;
+            StripPreviewBehaviours(activePreview);
+            PlayPreviewIdle(activePreview);
+        }
+
+        if (characterNameText != null)
+        {
+            characterNameText.text = option.Label;
+        }
+    }
+
+    private void CycleCharacter(int direction)
+    {
+        if (options == null || options.Length == 0)
+        {
+            return;
+        }
+
+        currentIndex = (currentIndex + direction + options.Length) % options.Length;
+        ShowCurrentOption();
     }
 
     private void StripPreviewBehaviours(GameObject preview)
@@ -121,6 +182,26 @@ public class CharacterSelectUI : MonoBehaviour
         }
     }
 
+    private void PlayPreviewIdle(GameObject preview)
+    {
+        Animator animator = preview.GetComponentInChildren<Animator>();
+        if (animator == null || animator.runtimeAnimatorController == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < PreviewIdleStateNames.Length; i++)
+        {
+            int stateHash = Animator.StringToHash(PreviewIdleStateNames[i]);
+            if (animator.HasState(0, stateHash))
+            {
+                animator.Play(stateHash, 0, 0f);
+                animator.Update(0f);
+                return;
+            }
+        }
+    }
+
     private void EnsurePreviewCamera()
     {
         if (Camera.main != null)
@@ -137,7 +218,7 @@ public class CharacterSelectUI : MonoBehaviour
         cameraObject.transform.rotation = Quaternion.Euler(12f, 0f, 0f);
     }
 
-    private void CreateLabel(Transform parent, string textValue, Vector2 anchoredPosition, float fontSize)
+    private TextMeshProUGUI CreateLabel(Transform parent, string textValue, Vector2 anchoredPosition, float fontSize)
     {
         GameObject labelObject = new GameObject("Title");
         labelObject.transform.SetParent(parent, false);
@@ -153,9 +234,28 @@ public class CharacterSelectUI : MonoBehaviour
         text.fontSize = fontSize;
         text.alignment = TextAlignmentOptions.Center;
         text.color = new Color(0.14f, 0.16f, 0.12f, 1f);
+        return text;
     }
 
-    private void CreateButton(Transform parent, string buttonName, string label, Vector2 anchoredPosition, PlayerCharacterSelection.Character character)
+    private void CreatePreviewClickArea(Transform parent)
+    {
+        GameObject buttonObject = new GameObject("PreviewClickArea");
+        buttonObject.transform.SetParent(parent, false);
+
+        RectTransform rect = buttonObject.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = new Vector2(0f, 18f);
+        rect.sizeDelta = new Vector2(420f, 260f);
+
+        Image image = buttonObject.AddComponent<Image>();
+        image.color = new Color(1f, 1f, 1f, 0f);
+
+        Button button = buttonObject.AddComponent<Button>();
+        button.onClick.AddListener(() => CycleCharacter(1));
+    }
+
+    private void CreateArrowButton(Transform parent, string buttonName, string label, Vector2 anchoredPosition, int direction)
     {
         GameObject buttonObject = new GameObject(buttonName);
         buttonObject.transform.SetParent(parent, false);
@@ -163,16 +263,36 @@ public class CharacterSelectUI : MonoBehaviour
         RectTransform rect = buttonObject.AddComponent<RectTransform>();
         rect.anchorMin = new Vector2(0.5f, 0.5f);
         rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = anchoredPosition + new Vector2(0f, -58f);
-        rect.sizeDelta = new Vector2(180f, 48f);
+        rect.anchoredPosition = anchoredPosition;
+        rect.sizeDelta = new Vector2(64f, 64f);
 
         Image image = buttonObject.AddComponent<Image>();
         image.color = new Color(1f, 1f, 1f, 0.94f);
 
         Button button = buttonObject.AddComponent<Button>();
-        button.onClick.AddListener(() => SelectCharacter(character));
+        button.onClick.AddListener(() => CycleCharacter(direction));
 
         CreateButtonText(buttonObject.transform, label);
+    }
+
+    private void CreateConfirmButton(Transform parent)
+    {
+        GameObject buttonObject = new GameObject("ConfirmButton");
+        buttonObject.transform.SetParent(parent, false);
+
+        RectTransform rect = buttonObject.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = new Vector2(0f, -190f);
+        rect.sizeDelta = new Vector2(220f, 54f);
+
+        Image image = buttonObject.AddComponent<Image>();
+        image.color = new Color(0.95f, 0.98f, 0.88f, 0.96f);
+
+        Button button = buttonObject.AddComponent<Button>();
+        button.onClick.AddListener(ConfirmSelection);
+
+        CreateButtonText(buttonObject.transform, "Select");
     }
 
     private void CreateBackButton(Transform parent)
@@ -183,8 +303,8 @@ public class CharacterSelectUI : MonoBehaviour
         RectTransform rect = buttonObject.AddComponent<RectTransform>();
         rect.anchorMin = new Vector2(0.5f, 0.5f);
         rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = new Vector2(0f, -215f);
-        rect.sizeDelta = new Vector2(180f, 50f);
+        rect.anchoredPosition = new Vector2(0f, -252f);
+        rect.sizeDelta = new Vector2(160f, 44f);
 
         Image image = buttonObject.AddComponent<Image>();
         image.color = new Color(0.86f, 0.88f, 0.84f, 0.94f);
@@ -213,9 +333,13 @@ public class CharacterSelectUI : MonoBehaviour
         text.color = new Color(0.16f, 0.18f, 0.14f, 1f);
     }
 
-    private void SelectCharacter(PlayerCharacterSelection.Character character)
+    private void ConfirmSelection()
     {
-        PlayerCharacterSelection.SaveSelection(character);
+        if (options != null && options.Length > 0)
+        {
+            PlayerCharacterSelection.SaveSelection(options[currentIndex].Character);
+        }
+
         GameManager.Instance.StartGameplay();
     }
 }
