@@ -2485,7 +2485,7 @@ Animator:
   m_GameObject: {fileID: 4980728175960791824}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: 37ab5ee15ddf4eb4d85c2d2b26fc8276, type: 3}
-  m_Controller: {fileID: 9100000, guid: 1451483b5513cef4e83f6940f91d290e, type: 2}
+  m_Controller: {fileID: 9100000, guid: 1215e98cc02a91340b3a9af5af091f14, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -2535,7 +2535,7 @@ MonoBehaviour:
   startGrid: {x: 0, y: 0}
   minGrid: {x: -2, y: 0}
   maxGrid: {x: 2, y: 99999}
-  jumpDuration: 0.15
+  jumpDuration: 0.3
   jumpHeight: 0.85
   squashAmount: 0.12
   stretchAmount: 0.12
@@ -2573,7 +2573,7 @@ MonoBehaviour:
   startGrid: {x: 0, y: 0}
   currentGridPosition: {x: 0, y: 0}
   targetGridPosition: {x: 0, y: 0}
-  jumpDuration: 0.18
+  jumpDuration: 0.36
   jumpHeight: 0.95
   squashAmount: 0.12
   stretchAmount: 0.12

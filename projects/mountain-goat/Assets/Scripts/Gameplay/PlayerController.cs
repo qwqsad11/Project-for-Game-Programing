@@ -14,7 +14,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Vector2Int maxGrid = new Vector2Int(2, 99999);
 
     [Header("Jump")]
-    [SerializeField] private float jumpDuration = 0.15f;
+    [SerializeField] private float jumpDuration = 0.3f;
     [SerializeField] private float jumpHeight = 0.85f;
     [SerializeField] private float squashAmount = 0.12f;
     [SerializeField] private float stretchAmount = 0.12f;

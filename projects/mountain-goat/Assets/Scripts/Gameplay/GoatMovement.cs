@@ -24,12 +24,15 @@ public class GoatMovement : GoatController
     [SerializeField] private Vector2Int maxGrid = new Vector2Int(2, 99999);
 
     [Header("Jump")]
-    [SerializeField] private float jumpDuration = 0.15f;
+    [SerializeField] private float jumpDuration = 0.3f;
     [SerializeField] private float jumpHeight = 0.85f;
     [SerializeField] private float squashAmount = 0.12f;
     [SerializeField] private float stretchAmount = 0.12f;
     [SerializeField] private float springJumpMultiplier = 1.35f;
     [SerializeField] private bool faceOppositeJumpDirection = true;
+    [SerializeField] private bool playJumpWhenZChanges = true;
+    [SerializeField] private float zChangeJumpThreshold = 0.01f;
+    [SerializeField] private float zChangeJumpAnimationDuration = 0.4f;
 
     [Header("State")]
     [SerializeField] private float fallDeathY = -8f;
@@ -49,12 +52,12 @@ public class GoatMovement : GoatController
     [SerializeField] private Animator animator;
     [SerializeField] private LevelGenerator levelGenerator;
 
-    [Header("Character Animation States")]
-    [SerializeField] private string[] idleStateNames = { "idle", "DIdle 1", "DIdle Look" };
-    [SerializeField] private string[] jumpStateNames = { "DJump Trot", "DJump Run", "DJump Trot Baked", "DJump Run Baked", "jump" };
-    [SerializeField] private string[] deathStateNames = { "GoatSheep_death", "stand_to_sit", "DDeath Side" };
-    [SerializeField] private string[] hitStateNames = { "GoatSheep_hit_reaction", "DGetHit Front L", "DGetHit Front R", "DGetHit L", "DGetHit R" };
-    [SerializeField] private string[] attackStateNames = { "GoatSheep_attack01", "trot_forward", "DAttackFrontLegs", "DAttack FrontLegs", "DAttack Horns 1", "DAttack Back Legs" };
+    [Header("Goat Animation States (Goat&SheepAnimCont)")]
+    [SerializeField] private string[] idleStateNames = { "idle" };
+    [SerializeField] private string[] jumpStateNames = { "jump" };
+    [SerializeField] private string[] deathStateNames = { "GoatSheep_death", "stand_to_sit" };
+    [SerializeField] private string[] hitStateNames = { "GoatSheep_hit_reaction" };
+    [SerializeField] private string[] attackStateNames = { "GoatSheep_attack01" };
 
     private JumpController jumpController;
     private bool isDead;
@@ -64,6 +67,8 @@ public class GoatMovement : GoatController
     private float spawnProtectionTimer;
     private float pendingJumpMultiplier = 1f;
     private Coroutine hitRoutine;
+    private Coroutine zChangeJumpRoutine;
+    private float lastObservedZ;
     private static readonly Vector2Int[] TreasureChestNeighborOffsets =
     {
         Vector2Int.up,
@@ -102,6 +107,7 @@ public class GoatMovement : GoatController
         }
 
         transform.position = GetWorldPosition(currentGrid);
+        lastObservedZ = transform.position.z;
         spawnProtectionTimer = spawnProtectionDuration;
 
         if (animator != null)
@@ -114,7 +120,7 @@ public class GoatMovement : GoatController
 
     private void Update()
     {
-        if (GameManager.Instance == null || GameManager.Instance.CurrentState != GameManager.GameState.Playing || isDead)
+        if (GameManager.Instance == null || (GameManager.Instance.CurrentState != GameManager.GameState.Playing && GameManager.Instance.CurrentState != GameManager.GameState.Tutorial) || isDead)
         {
             return;
         }
@@ -136,9 +142,20 @@ public class GoatMovement : GoatController
         }
     }
 
+    private void LateUpdate()
+    {
+        TrackZAxisJumpAnimation();
+    }
+
     private void HandleInput()
     {
         Vector2Int delta = Vector2Int.zero;
+
+        if (Input.GetKeyDown(KeyCode.W))
+        {
+            TryOpenAdjacentChest();
+            return;
+        }
 
         if (Input.GetKeyDown(KeyCode.Q))
         {
@@ -229,6 +246,7 @@ public class GoatMovement : GoatController
         isMoving = false;
 
         SetAnimatorBool("isJump", false);
+        StopZChangeJumpRoutine();
         PlayCharacterAction(CharacterAction.Idle);
 
         bool shouldDieFromThundercloud = pendingThundercloudStrike || ThundercloudHazard.IsStrikingAt(currentGrid);
@@ -249,8 +267,6 @@ public class GoatMovement : GoatController
         {
             levelGenerator.NotifyLanded(currentGrid);
         }
-
-        TryAttackNearbyTreasureChest();
     }
 
     public override void Die()
@@ -264,6 +280,7 @@ public class GoatMovement : GoatController
         isMoving = false;
         isAttacking = false;
         StopHitRoutine();
+        StopZChangeJumpRoutine();
 
         SetAnimatorBool("isJump", false);
         SetAnimatorBool("isAttack", false);
@@ -287,6 +304,7 @@ public class GoatMovement : GoatController
         isMoving = false;
         isAttacking = false;
         StopHitRoutine();
+        StopZChangeJumpRoutine();
 
         SetAnimatorBool("isJump", false);
         SetAnimatorBool("isAttack", false);
@@ -330,7 +348,24 @@ public class GoatMovement : GoatController
         SetAnimatorBool("isJump", false);
         SetAnimatorBool("isAttack", false);
         SetAnimatorBool("isDead", false);
+        StopZChangeJumpRoutine();
         PlayCharacterAction(CharacterAction.Idle);
+    }
+
+    private void TryOpenAdjacentChest()
+    {
+        if (!attackAdjacentTreasureChests || isDead || isAttacking || isMoving || GridManager.Instance == null)
+        {
+            return;
+        }
+
+        TreasureChestPickup targetChest = FindNearbyTreasureChest();
+        if (targetChest == null)
+        {
+            return;
+        }
+
+        StartCoroutine(AttackTreasureChestRoutine(targetChest));
     }
 
     private void TryAttackNearbyTreasureChest()
@@ -354,6 +389,26 @@ public class GoatMovement : GoatController
         TreasureChestPickup bestChest = null;
         float bestDistance = float.MaxValue;
 
+        // First check the current tile (the one the goat is standing on)
+        if (GridManager.Instance.TryGetTile(currentGrid, out Tile currentTile) && currentTile != null)
+        {
+            TreasureChestPickup[] chests = currentTile.GetComponentsInChildren<TreasureChestPickup>(true);
+            for (int i = 0; i < chests.Length; i++)
+            {
+                TreasureChestPickup chest = chests[i];
+                if (chest != null && !chest.IsOpened)
+                {
+                    float distance = (chest.transform.position - transform.position).sqrMagnitude;
+                    if (distance < bestDistance)
+                    {
+                        bestDistance = distance;
+                        bestChest = chest;
+                    }
+                }
+            }
+        }
+
+        // Then check adjacent tiles
         for (int offsetIndex = 0; offsetIndex < TreasureChestNeighborOffsets.Length; offsetIndex++)
         {
             Vector2Int grid = currentGrid + TreasureChestNeighborOffsets[offsetIndex];
@@ -392,6 +447,7 @@ public class GoatMovement : GoatController
 
         isAttacking = true;
         StopHitRoutine();
+        StopZChangeJumpRoutine();
 
         Vector3 originalPosition = transform.position;
         Vector3 chestDirection = chest.transform.position - transform.position;
@@ -446,6 +502,57 @@ public class GoatMovement : GoatController
         {
             PlayCharacterAction(CharacterAction.Idle);
         }
+    }
+
+    private void TrackZAxisJumpAnimation()
+    {
+        float currentZ = transform.position.z;
+        if (!playJumpWhenZChanges || isDead || isMoving || isAttacking)
+        {
+            lastObservedZ = currentZ;
+            return;
+        }
+
+        if (Mathf.Abs(currentZ - lastObservedZ) > zChangeJumpThreshold)
+        {
+            PlayZChangeJumpAnimation();
+        }
+
+        lastObservedZ = currentZ;
+    }
+
+    private void PlayZChangeJumpAnimation()
+    {
+        StopHitRoutine();
+        StopZChangeJumpRoutine();
+
+        SetAnimatorBool("isJump", true);
+        PlayCharacterAction(CharacterAction.Jump);
+        zChangeJumpRoutine = StartCoroutine(ZChangeJumpRecoveryRoutine());
+    }
+
+    private IEnumerator ZChangeJumpRecoveryRoutine()
+    {
+        yield return new WaitForSeconds(zChangeJumpAnimationDuration);
+        zChangeJumpRoutine = null;
+
+        if (!isDead && !isMoving && !isAttacking)
+        {
+            SetAnimatorBool("isJump", false);
+            PlayCharacterAction(CharacterAction.Idle);
+        }
+    }
+
+    private void StopZChangeJumpRoutine()
+    {
+        if (zChangeJumpRoutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(zChangeJumpRoutine);
+        zChangeJumpRoutine = null;
+        SetAnimatorBool("isJump", false);
     }
 
     private void StopHitRoutine()

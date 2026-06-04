@@ -3,7 +3,6 @@ using UnityEngine;
 [RequireComponent(typeof(Collider))]
 public class GrassPickup : MonoBehaviour
 {
-    [SerializeField] private float hungerReduceAmount = 30f;
     [SerializeField] private GameObject consumedVisual;
     [SerializeField] private bool destroyRootOnConsume = true;
 
@@ -62,7 +61,7 @@ public class GrassPickup : MonoBehaviour
 
         if (hungerSystem != null)
         {
-            hungerSystem.ReduceHunger(hungerReduceAmount);
+            hungerSystem.ClearHunger();
         }
 
         consumed = true;

@@ -81,14 +81,27 @@ public class CharacterSelectUI : MonoBehaviour
             canvasRect.offsetMax = Vector2.zero;
         }
 
-        CreateLabel(canvas.transform, "Choose Animal", new Vector2(0f, 215f), 42f);
+        // Title with drop shadow
+        CreateTitleLabel(canvas.transform, "\U0001F410  Choose Animal", new Vector2(0f, 220f), 44f);
         CreatePreviewClickArea(canvas.transform);
-        CreateArrowButton(canvas.transform, "PreviousButton", "<", new Vector2(-255f, 0f), -1);
-        CreateArrowButton(canvas.transform, "NextButton", ">", new Vector2(255f, 0f), 1);
-        characterNameText = CreateLabel(canvas.transform, string.Empty, new Vector2(0f, -128f), 34f);
-        CreateConfirmButton(canvas.transform);
 
-        CreateBackButton(canvas.transform);
+        // Arrow buttons — styled icon buttons
+        CreateArrowButton(canvas.transform, "PreviousButton", "◀", new Vector2(-260f, 0f), -1);
+        CreateArrowButton(canvas.transform, "NextButton", "▶", new Vector2(260f, 0f), 1);
+
+        // Character name display
+        characterNameText = CreateStyledLabel(canvas.transform, string.Empty, new Vector2(0f, -128f), 36f,
+            Color.white, bold: true);
+
+        // Confirm button — primary
+        UIHelper.CreateStyledButton(canvas.transform, "ConfirmButton", "Select",
+            new Vector2(0f, -195f), UIColorPalette.BtnConfirm,
+            ConfirmSelection, UIHelper.ButtonRole.Primary);
+
+        // Back button — secondary
+        UIHelper.CreateStyledButton(canvas.transform, "BackButton", "Back",
+            new Vector2(0f, -258f), UIColorPalette.BtnBack,
+            () => GameManager.Instance.ReturnToMenu(), UIHelper.ButtonRole.Secondary);
     }
 
     private void SelectSavedCharacterIndex()
@@ -218,23 +231,22 @@ public class CharacterSelectUI : MonoBehaviour
         cameraObject.transform.rotation = Quaternion.Euler(12f, 0f, 0f);
     }
 
-    private TextMeshProUGUI CreateLabel(Transform parent, string textValue, Vector2 anchoredPosition, float fontSize)
+    // ── UI Creation Helpers ──
+
+    private void CreateTitleLabel(Transform parent, string textValue, Vector2 anchoredPosition, float fontSize)
     {
-        GameObject labelObject = new GameObject("Title");
-        labelObject.transform.SetParent(parent, false);
+        UIHelper.CreateStyledText(parent, "Title", textValue,
+            anchoredPosition, new Vector2(560f, 70f), fontSize,
+            TextAlignmentOptions.Center, UIColorPalette.TextDark,
+            bold: true, shadow: true);
+    }
 
-        RectTransform rect = labelObject.AddComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = anchoredPosition;
-        rect.sizeDelta = new Vector2(520f, 80f);
-
-        TextMeshProUGUI text = labelObject.AddComponent<TextMeshProUGUI>();
-        text.text = textValue;
-        text.fontSize = fontSize;
-        text.alignment = TextAlignmentOptions.Center;
-        text.color = new Color(0.14f, 0.16f, 0.12f, 1f);
-        return text;
+    private TextMeshProUGUI CreateStyledLabel(Transform parent, string textValue, Vector2 anchoredPosition,
+        float fontSize, Color color, bool bold = false)
+    {
+        return UIHelper.CreateStyledText(parent, "Label", textValue,
+            anchoredPosition, new Vector2(520f, 60f), fontSize,
+            TextAlignmentOptions.Center, color, bold: bold);
     }
 
     private void CreatePreviewClickArea(Transform parent)
@@ -255,82 +267,28 @@ public class CharacterSelectUI : MonoBehaviour
         button.onClick.AddListener(() => CycleCharacter(1));
     }
 
-    private void CreateArrowButton(Transform parent, string buttonName, string label, Vector2 anchoredPosition, int direction)
+    private void CreateArrowButton(Transform parent, string buttonName, string label,
+        Vector2 anchoredPosition, int direction)
     {
-        GameObject buttonObject = new GameObject(buttonName);
-        buttonObject.transform.SetParent(parent, false);
+        UIHelper.CreateStyledButton(parent, buttonName, label,
+            anchoredPosition, UIColorPalette.BtnArrow,
+            () => CycleCharacter(direction), UIHelper.ButtonRole.Icon);
 
-        RectTransform rect = buttonObject.AddComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = anchoredPosition;
-        rect.sizeDelta = new Vector2(64f, 64f);
-
-        Image image = buttonObject.AddComponent<Image>();
-        image.color = new Color(1f, 1f, 1f, 0.94f);
-
-        Button button = buttonObject.AddComponent<Button>();
-        button.onClick.AddListener(() => CycleCharacter(direction));
-
-        CreateButtonText(buttonObject.transform, label);
-    }
-
-    private void CreateConfirmButton(Transform parent)
-    {
-        GameObject buttonObject = new GameObject("ConfirmButton");
-        buttonObject.transform.SetParent(parent, false);
-
-        RectTransform rect = buttonObject.AddComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = new Vector2(0f, -190f);
-        rect.sizeDelta = new Vector2(220f, 54f);
-
-        Image image = buttonObject.AddComponent<Image>();
-        image.color = new Color(0.95f, 0.98f, 0.88f, 0.96f);
-
-        Button button = buttonObject.AddComponent<Button>();
-        button.onClick.AddListener(ConfirmSelection);
-
-        CreateButtonText(buttonObject.transform, "Select");
-    }
-
-    private void CreateBackButton(Transform parent)
-    {
-        GameObject buttonObject = new GameObject("BackButton");
-        buttonObject.transform.SetParent(parent, false);
-
-        RectTransform rect = buttonObject.AddComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = new Vector2(0f, -252f);
-        rect.sizeDelta = new Vector2(160f, 44f);
-
-        Image image = buttonObject.AddComponent<Image>();
-        image.color = new Color(0.86f, 0.88f, 0.84f, 0.94f);
-
-        Button button = buttonObject.AddComponent<Button>();
-        button.onClick.AddListener(() => GameManager.Instance.ReturnToMenu());
-
-        CreateButtonText(buttonObject.transform, "Back");
-    }
-
-    private void CreateButtonText(Transform parent, string label)
-    {
-        GameObject textObject = new GameObject("Text");
-        textObject.transform.SetParent(parent, false);
-
-        RectTransform textRect = textObject.AddComponent<RectTransform>();
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI text = textObject.AddComponent<TextMeshProUGUI>();
-        text.text = label;
-        text.fontSize = 24f;
-        text.alignment = TextAlignmentOptions.Center;
-        text.color = new Color(0.16f, 0.18f, 0.14f, 1f);
+        // Override the button text color to dark since arrow buttons are light
+        Transform btnTransform = parent.Find(buttonName);
+        if (btnTransform != null)
+        {
+            Transform textTransform = btnTransform.Find("Text");
+            if (textTransform != null)
+            {
+                TextMeshProUGUI tmp = textTransform.GetComponent<TextMeshProUGUI>();
+                if (tmp != null)
+                {
+                    tmp.color = UIColorPalette.TextDark;
+                    tmp.fontSize = 32f;
+                }
+            }
+        }
     }
 
     private void ConfirmSelection()

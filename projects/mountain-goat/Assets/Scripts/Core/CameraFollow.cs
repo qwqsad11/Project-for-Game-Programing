@@ -28,15 +28,10 @@ public class CameraFollow : MonoBehaviour
     private Camera cachedCamera;
     private float shakeTimer;
     private Vector3 shakeOffset;
+    private bool hasSnappedToTarget;
 
     private void Awake()
     {
-        followOffset = new Vector3(0f, 0f, -8.8f);
-        lookOffset = Vector3.up * 1.1f;
-        lookAheadHeight = 1.2f;
-        targetScreenYOffset = 0f;
-        smoothTime = 0.14f;
-
         cachedCamera = GetComponent<Camera>();
         if (cachedCamera != null)
         {
@@ -71,13 +66,29 @@ public class CameraFollow : MonoBehaviour
 
         desired += shakeOffset;
 
-        Vector3 smoothed = Vector3.SmoothDamp(transform.position, desired, ref velocity, smoothTime);
-        transform.position = smoothed;
+        if (!hasSnappedToTarget)
+        {
+            transform.position = desired;
+            velocity = Vector3.zero;
+            hasSnappedToTarget = true;
+        }
+        else
+        {
+            Vector3 smoothed = Vector3.SmoothDamp(transform.position, desired, ref velocity, smoothTime);
+            transform.position = smoothed;
+        }
+
         transform.rotation = Quaternion.Euler(cameraRotation);
     }
 
     public void SetTarget(Transform newTarget)
     {
+        if (target != newTarget)
+        {
+            hasSnappedToTarget = false;
+            velocity = Vector3.zero;
+        }
+
         target = newTarget;
     }
 
@@ -88,7 +99,7 @@ public class CameraFollow : MonoBehaviour
         {
             if (target == null || target != goat.transform)
             {
-                target = goat.transform;
+                SetTarget(goat.transform);
             }
             return;
         }
@@ -101,7 +112,7 @@ public class CameraFollow : MonoBehaviour
         PlayerController player = FindObjectOfType<PlayerController>();
         if (player != null)
         {
-            target = player.transform;
+            SetTarget(player.transform);
         }
     }
 
@@ -112,7 +123,11 @@ public class CameraFollow : MonoBehaviour
 
     private Vector3 ComputeDesiredPosition()
     {
-        Vector3 desired = target.position + followOffset;
+        Quaternion rotation = Quaternion.Euler(cameraRotation);
+        Vector3 centeredOffset = centerTargetOnScreen
+            ? new Vector3(0f, followOffset.y, followOffset.z)
+            : followOffset;
+        Vector3 desired = target.position + rotation * centeredOffset;
         if (centerTargetOnScreen)
         {
             desired.y = target.position.y + targetScreenYOffset;

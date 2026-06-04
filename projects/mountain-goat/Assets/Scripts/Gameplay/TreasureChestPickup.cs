@@ -24,7 +24,7 @@ public class TreasureChestPickup : MonoBehaviour
         ConfigurePhysics();
     }
 
-    public bool TryOpen(GoatMovement goat)
+    public bool TryOpen(GoatController opener = null)
     {
         if (opened)
         {

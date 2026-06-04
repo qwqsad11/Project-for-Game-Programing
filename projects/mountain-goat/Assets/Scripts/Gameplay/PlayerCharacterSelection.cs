@@ -85,12 +85,25 @@ public class PlayerCharacterSelection : MonoBehaviour
 
     public static Character GetSavedCharacter(Character fallback = Character.Goat)
     {
-        int savedValue = PlayerPrefs.GetInt(PlayerPrefsKey, (int)fallback);
-        return System.Enum.IsDefined(typeof(Character), savedValue) ? (Character)savedValue : fallback;
+        if (ProfileManager.Instance != null && ProfileManager.Instance.HasActiveProfile)
+        {
+            int savedValue = ProfileManager.Instance.GetCharacterSelection();
+            return System.Enum.IsDefined(typeof(Character), savedValue) ? (Character)savedValue : fallback;
+        }
+
+        // Fallback to PlayerPrefs during migration/transition
+        int ppValue = PlayerPrefs.GetInt(PlayerPrefsKey, (int)fallback);
+        return System.Enum.IsDefined(typeof(Character), ppValue) ? (Character)ppValue : fallback;
     }
 
     public static void SaveSelection(Character character)
     {
+        if (ProfileManager.Instance != null && ProfileManager.Instance.HasActiveProfile)
+        {
+            ProfileManager.Instance.SaveCharacterSelection((int)character);
+        }
+
+        // Also save to PlayerPrefs for backward compatibility during transition
         PlayerPrefs.SetInt(PlayerPrefsKey, (int)character);
         PlayerPrefs.Save();
     }
@@ -104,16 +117,19 @@ public class PlayerCharacterSelection : MonoBehaviour
             activeAnimalInstance.SetActive(false);
         }
 
+        Animator anim = goatAnimator != null ? goatAnimator : GetComponent<Animator>();
+
         GoatMovement movement = GetComponent<GoatMovement>();
         if (movement != null)
         {
-            movement.SetAnimator(goatAnimator != null ? goatAnimator : GetComponent<Animator>());
+            movement.enabled = true;
+            movement.SetAnimator(anim);
         }
 
         PlayerMovement playerMovement = GetComponent<PlayerMovement>();
         if (playerMovement != null)
         {
-            playerMovement.SetAnimator(goatAnimator != null ? goatAnimator : GetComponentInChildren<Animator>());
+            playerMovement.enabled = false;
         }
     }
 
@@ -142,16 +158,28 @@ public class PlayerCharacterSelection : MonoBehaviour
             PlayIdle(animalAnimator);
         }
 
-        GoatMovement movement = GetComponent<GoatMovement>();
-        if (movement != null)
-        {
-            movement.SetAnimator(animalAnimator);
-        }
-
         PlayerMovement playerMovement = GetComponent<PlayerMovement>();
         if (playerMovement != null)
         {
+            // Dedicated deer movement system available — use it
+            GoatMovement goatMovement = GetComponent<GoatMovement>();
+            if (goatMovement != null)
+            {
+                goatMovement.enabled = false;
+            }
+
+            playerMovement.enabled = true;
             playerMovement.SetAnimator(animalAnimator);
+        }
+        else
+        {
+            // Fallback: no PlayerMovement on this GameObject, route animal animator through GoatMovement
+            GoatMovement goatMovement = GetComponent<GoatMovement>();
+            if (goatMovement != null)
+            {
+                goatMovement.enabled = true;
+                goatMovement.SetAnimator(animalAnimator);
+            }
         }
     }
 

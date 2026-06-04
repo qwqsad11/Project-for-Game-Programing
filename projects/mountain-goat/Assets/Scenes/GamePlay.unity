@@ -1482,8 +1482,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHunger: 100
   startingHunger: 0
-  hungerIncreasePerSecond: 1
-  highHungerThreshold: 100
+  hungerIncreasePerSecond: 10
+  highHungerThreshold: 70
+  highHungerDeathDelay: 3
+  warningBarOffset: {x: 0, y: 1.6, z: 0}
+  warningBarSize: {x: 1.2, y: 0.16}
+  warningBarBackgroundColor: {r: 0, g: 0, b: 0, a: 0.65}
+  warningBarStartColor: {r: 0.15, g: 0.85, b: 0.25, a: 0.95}
+  warningBarEndColor: {r: 1, g: 0.2, b: 0.1, a: 0.95}
 --- !u!4 &9222726501709179223 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8479798530941442597, guid: 8610743574a819245af11f2814ba0d8c, type: 3}

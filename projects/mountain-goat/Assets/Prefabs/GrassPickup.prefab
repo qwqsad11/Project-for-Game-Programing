@@ -118,6 +118,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 04b3f68c38deefa44ac6760ce6fdd320, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hungerReduceAmount: 30
   consumedVisual: {fileID: 0}
   destroyRootOnConsume: 1
