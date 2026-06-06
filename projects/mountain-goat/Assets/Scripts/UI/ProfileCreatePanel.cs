@@ -40,6 +40,8 @@ public class ProfileCreatePanel : MonoBehaviour
 
     private void BuildPanel()
     {
+        UIHelper.EnsureEventSystem();
+
         // Ensure our own GameObject has a RectTransform for proper UI nesting
         RectTransform selfRect = GetComponent<RectTransform>();
         if (selfRect == null)
@@ -124,6 +126,7 @@ public class ProfileCreatePanel : MonoBehaviour
         phRect.offsetMax = Vector2.zero;
 
         TMP_Text placeholder = placeholderObj.AddComponent<TextMeshProUGUI>();
+        UIHelper.AssignDefaultFont(placeholder);
         placeholder.text = "Enter nickname (3-16 chars)";
         placeholder.fontSize = 19;
         placeholder.alignment = TextAlignmentOptions.Center;
@@ -140,6 +143,7 @@ public class ProfileCreatePanel : MonoBehaviour
         textR.offsetMax = Vector2.zero;
 
         TMP_Text inputText = textObj.AddComponent<TextMeshProUGUI>();
+        UIHelper.AssignDefaultFont(inputText);
         inputText.fontSize = 22;
         inputText.alignment = TextAlignmentOptions.Center;
         inputText.color = Color.white;
@@ -162,6 +166,7 @@ public class ProfileCreatePanel : MonoBehaviour
         errorRect.anchoredPosition = new Vector2(0f, -20f);
 
         errorText = errorObj.AddComponent<TextMeshProUGUI>();
+        UIHelper.AssignDefaultFont(errorText);
         errorText.fontSize = 15;
         errorText.alignment = TextAlignmentOptions.Center;
         errorText.color = UIColorPalette.TextError;

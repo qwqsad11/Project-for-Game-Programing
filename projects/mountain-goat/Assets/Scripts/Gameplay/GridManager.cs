@@ -86,6 +86,29 @@ public class GridManager : MonoBehaviour
 
     public bool HasPlatform(Vector2Int gridPosition) => HasTile(gridPosition);
 
+    /// <summary>
+    /// Returns true if the grid cell has an unopened treasure chest,
+    /// which blocks player movement onto that cell.
+    /// </summary>
+    public bool HasTreasureChest(Vector2Int gridPosition)
+    {
+        if (!platforms.TryGetValue(gridPosition, out Tile tile) || tile == null)
+        {
+            return false;
+        }
+
+        TreasureChestPickup[] chests = tile.GetComponentsInChildren<TreasureChestPickup>(true);
+        for (int i = 0; i < chests.Length; i++)
+        {
+            if (chests[i] != null && !chests[i].IsOpened)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public bool TryGetTile(Vector2Int gridPosition, out Tile tile)
     {
         return platforms.TryGetValue(gridPosition, out tile);

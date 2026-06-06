@@ -64,6 +64,8 @@ public class ProfileSelectUI : MonoBehaviour
 
     private void BuildUI()
     {
+        UIHelper.EnsureEventSystem();
+
         // Ensure our own GameObject has a RectTransform for proper UI nesting
         RectTransform selfRect = GetComponent<RectTransform>();
         if (selfRect == null)
@@ -245,6 +247,7 @@ public class ProfileSelectUI : MonoBehaviour
         rect.anchoredPosition = anchoredPosition;
 
         TMP_Text text = go.AddComponent<TextMeshProUGUI>();
+        UIHelper.AssignDefaultFont(text);
         text.text = content;
         text.fontSize = fontSize;
         text.alignment = TextAlignmentOptions.Center;
@@ -282,6 +285,7 @@ public class ProfileSelectUI : MonoBehaviour
         labelRect.offsetMax = Vector2.zero;
 
         TMP_Text tmp = labelObj.AddComponent<TextMeshProUGUI>();
+        UIHelper.AssignDefaultFont(tmp);
         tmp.text = label;
         tmp.fontSize = 18;
         tmp.alignment = TextAlignmentOptions.Center;

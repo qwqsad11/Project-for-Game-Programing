@@ -69,12 +69,19 @@ public class GoatMovement : GoatController
     private Coroutine hitRoutine;
     private Coroutine zChangeJumpRoutine;
     private float lastObservedZ;
+    // All 8 grid-adjacent offsets (Chebyshev distance = 1).
+    // Player can move via Q(-1,1) E(0,1) A(0,-1) D(1,-1) so we must
+    // check all 8 neighbours so chests on diagonal tiles are reachable.
     private static readonly Vector2Int[] TreasureChestNeighborOffsets =
     {
-        Vector2Int.up,
-        Vector2Int.down,
-        Vector2Int.left,
-        Vector2Int.right
+        new Vector2Int(0, 1),
+        new Vector2Int(0, -1),
+        new Vector2Int(-1, 0),
+        new Vector2Int(1, 0),
+        new Vector2Int(-1, 1),
+        new Vector2Int(1, -1),
+        new Vector2Int(1, 1),
+        new Vector2Int(-1, -1)
     };
 
     public bool IsMoving => isMoving || isAttacking;
@@ -207,6 +214,12 @@ public class GoatMovement : GoatController
                 Die();
             }
 
+            return;
+        }
+
+        // Block movement onto tiles occupied by unopened treasure chests
+        if (GridManager.Instance != null && GridManager.Instance.HasTreasureChest(targetGrid))
+        {
             return;
         }
 
@@ -356,15 +369,24 @@ public class GoatMovement : GoatController
     {
         if (!attackAdjacentTreasureChests || isDead || isAttacking || isMoving || GridManager.Instance == null)
         {
+#if UNITY_EDITOR
+            Debug.Log($"[GoatMovement] TryOpenAdjacentChest blocked: attackEnabled={attackAdjacentTreasureChests}, dead={isDead}, attacking={isAttacking}, moving={isMoving}, gridManager={GridManager.Instance != null}");
+#endif
             return;
         }
 
         TreasureChestPickup targetChest = FindNearbyTreasureChest();
         if (targetChest == null)
         {
+#if UNITY_EDITOR
+            Debug.Log($"[GoatMovement] FindNearbyTreasureChest returned null at grid {currentGrid}. Checking tiles: current + {TreasureChestNeighborOffsets.Length} neighbors.");
+#endif
             return;
         }
 
+#if UNITY_EDITOR
+        Debug.Log($"[GoatMovement] Opening chest '{targetChest.name}' of rarity {targetChest.Rarity} at {targetChest.transform.position}");
+#endif
         StartCoroutine(AttackTreasureChestRoutine(targetChest));
     }
 

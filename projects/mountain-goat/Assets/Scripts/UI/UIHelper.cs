@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
@@ -18,6 +19,87 @@ public static class UIHelper
     // ── Cached materials ──
     private static Material _cachedOutlineMat;
     private static Material _cachedShadowMat;
+
+    // ── Cached TMP font asset ──
+    private static TMP_FontAsset _cachedFontAsset;
+    private static bool _fontLookupAttempted;
+
+    /// <summary>
+    /// Returns the manaspc SDF font asset from Resources.
+    /// Cached after first load. Returns null if not found.
+    /// </summary>
+    public static TMP_FontAsset GetDefaultFontAsset()
+    {
+        if (_cachedFontAsset == null && !_fontLookupAttempted)
+        {
+            _fontLookupAttempted = true;
+
+            // Priority 1: Built-in LiberationSans (always works, guaranteed glyph coverage)
+            _cachedFontAsset = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+            if (_cachedFontAsset != null)
+            {
+                Debug.Log("[UIHelper] Using font: LiberationSans SDF (built-in)");
+            }
+
+            // Priority 2: User's custom manaspc font (overrides if LiberationSans unavailable)
+            if (_cachedFontAsset == null)
+            {
+                _cachedFontAsset = Resources.Load<TMP_FontAsset>("Fonts/manaspc SDF");
+                if (_cachedFontAsset != null)
+                {
+                    Debug.Log("[UIHelper] Using font: manaspc SDF (custom)");
+                }
+            }
+
+            // Priority 3: TMP Settings default
+            if (_cachedFontAsset == null)
+            {
+                _cachedFontAsset = TMP_Settings.defaultFontAsset;
+                if (_cachedFontAsset != null)
+                {
+                    Debug.Log($"[UIHelper] Using TMP Settings default font: {_cachedFontAsset.name}");
+                }
+                else
+                {
+                    Debug.LogError("[UIHelper] CRITICAL: No TMP font asset found! All UI text will be invisible.");
+                }
+            }
+        }
+        return _cachedFontAsset;
+    }
+
+    // ── EventSystem ─────────────────────────────────
+
+    /// <summary>
+    /// Ensure an EventSystem exists in the scene.
+    /// Required for ScrollRect, Button, TMP_InputField, and other UI interactivity.
+    /// </summary>
+    public static void EnsureEventSystem()
+    {
+        if (EventSystem.current != null) return;
+
+        GameObject eventSystemObj = new GameObject("EventSystem");
+        eventSystemObj.AddComponent<EventSystem>();
+        eventSystemObj.AddComponent<StandaloneInputModule>();
+    }
+
+    /// <summary>
+    /// Safely assign the default font to a TMP_Text component.
+    /// Does nothing if the font asset is unavailable (logs a warning).
+    /// </summary>
+    public static void AssignDefaultFont(TMP_Text textComponent)
+    {
+        if (textComponent == null) return;
+        TMP_FontAsset font = GetDefaultFontAsset();
+        if (font != null)
+        {
+            textComponent.font = font;
+        }
+        else
+        {
+            Debug.LogWarning($"[UIHelper] Cannot assign font to '{textComponent.name}' — no font asset available.");
+        }
+    }
 
     // ── Sprite Generation ───────────────────────────
 
@@ -226,6 +308,7 @@ public static class UIHelper
         labelRect.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tmp = labelObj.AddComponent<TextMeshProUGUI>();
+        AssignDefaultFont(tmp);
         tmp.text = label;
         tmp.fontSize = fontSize;
         tmp.alignment = TextAlignmentOptions.Center;
@@ -258,6 +341,9 @@ public static class UIHelper
         tmp.fontSize = fontSize;
         tmp.alignment = alignment;
         tmp.color = color;
+
+        // Assign the TMP font asset — text won't render without this
+        AssignDefaultFont(tmp);
 
         if (bold) tmp.fontStyle |= FontStyles.Bold;
         if (outline && GetOutlineMaterial() != null)

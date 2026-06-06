@@ -88,6 +88,7 @@ public class TutorialHUD : MonoBehaviour
         rect.offsetMax = new Vector2(-30f, 0f);
 
         titleText = titleObj.AddComponent<TextMeshProUGUI>();
+        UIHelper.AssignDefaultFont(titleText);
         titleText.fontSize = titleFontSize;
         titleText.color = textColor;
         titleText.alignment = TextAlignmentOptions.Center;
@@ -108,6 +109,7 @@ public class TutorialHUD : MonoBehaviour
         rect.offsetMax = new Vector2(-40f, 0f);
 
         messageText = msgObj.AddComponent<TextMeshProUGUI>();
+        UIHelper.AssignDefaultFont(messageText);
         messageText.fontSize = messageFontSize;
         messageText.color = Color.white;
         messageText.alignment = TextAlignmentOptions.Center;
@@ -154,6 +156,7 @@ public class TutorialHUD : MonoBehaviour
         rect.anchoredPosition = Vector2.zero;
 
         TMP_Text text = keyObj.AddComponent<TextMeshProUGUI>();
+        UIHelper.AssignDefaultFont(text);
         text.fontSize = keyFontSize;
         text.color = textColor;
         text.alignment = TextAlignmentOptions.Center;
@@ -191,6 +194,7 @@ public class TutorialHUD : MonoBehaviour
         txtRect.offsetMax = Vector2.zero;
 
         TMP_Text txt = txtObj.AddComponent<TextMeshProUGUI>();
+        UIHelper.AssignDefaultFont(txt);
         txt.text = "Skip >>";
         txt.fontSize = 16f;
         txt.color = new Color(0.75f, 0.75f, 0.75f, 1f);

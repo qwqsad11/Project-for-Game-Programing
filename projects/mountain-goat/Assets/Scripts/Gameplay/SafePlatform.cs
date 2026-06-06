@@ -5,12 +5,20 @@ public class SafePlatform : Tile
     [Header("Collectibles")]
     [SerializeField, Range(0f, 1f)] private float grassPickupChance = 0.2f;
     [SerializeField, Range(0f, 1f)] private float coinPickupChance = 0.1f;
-    [SerializeField, Range(0f, 1f)] private float treasureChestChance = 0.02f;
+    [SerializeField, Range(0f, 1f)] private float treasureChestChance = 0.025f;
     [SerializeField] private float pickupYOffset = 0.65f;
     [SerializeField] private float treasureChestYOffset = 0.45f;
     [SerializeField] private GameObject grassPickupPrefab;
     [SerializeField] private GameObject coinPickupPrefab;
-    [SerializeField] private GameObject treasureChestPrefab;
+
+    [Header("Treasure Chest Rarity")]
+    [SerializeField] private GameObject[] treasureChestPrefabs; // [0]=Common, [1]=Rare, [2]=Epic, [3]=Legendary
+
+    // Rarity weights: Common 60%, Rare 25%, Epic 12%, Legendary 3%
+    private static readonly float[] ChestRarityWeights = { 0.60f, 0.25f, 0.12f, 0.03f };
+    // Altitude bonus: per this many grid Y levels, Legendary/Epic weights increase
+    private const float RarityAltitudeScale = 0.015f;
+    private const int RarityAltitudeStep = 5;
 
     [SerializeField] private Renderer[] renderers;
 
@@ -65,29 +73,52 @@ public class SafePlatform : Tile
         }
 
         float roll = Random.value;
-        GameObject pickupPrefab = null;
+        bool spawningChest = false;
 
         if (roll < TreasureChestChance)
         {
-            pickupPrefab = treasureChestPrefab;
+            spawningChest = true;
         }
+        // Only spawn coin/grass if not spawning a chest
         else if (roll < TreasureChestChance + CoinPickupChance)
         {
-            pickupPrefab = coinPickupPrefab;
+            SpawnPickupInstance(coinPickupPrefab, pickupYOffset, isCoin: true);
+            return;
         }
         else if (CanSpawnGrassPickup && roll < TreasureChestChance + CoinPickupChance + GrassPickupChance)
         {
-            pickupPrefab = grassPickupPrefab;
+            SpawnPickupInstance(grassPickupPrefab, pickupYOffset, isCoin: false);
+            return;
         }
 
-        if (pickupPrefab == null)
+        if (!spawningChest)
         {
             return;
         }
 
+        // Select chest rarity based on weighted probability + altitude bonus
+        TreasureChestPickup.ChestRarity selectedRarity = PickChestRarity();
+        GameObject chestPrefab = GetChestPrefabForRarity(selectedRarity);
+        if (chestPrefab == null)
+        {
+            return;
+        }
+
+        SpawnPickupInstance(chestPrefab, treasureChestYOffset, isCoin: false, isTreasureChest: true, selectedRarity);
+    }
+
+    private void SpawnPickupInstance(GameObject pickupPrefab, float yOffset, bool isCoin, bool isTreasureChest = false, TreasureChestPickup.ChestRarity chestRarity = TreasureChestPickup.ChestRarity.Common)
+    {
+        if (pickupPrefab == null)
+        {
+#if UNITY_EDITOR
+            if (isTreasureChest) Debug.LogWarning($"[SafePlatform] Chest prefab is null for rarity {chestRarity} at grid {GridPosition}");
+#endif
+            return;
+        }
+
         attachedPickupInstance = Instantiate(pickupPrefab, transform);
-        bool isTreasureChest = pickupPrefab == treasureChestPrefab;
-        attachedPickupInstance.transform.localPosition = new Vector3(0f, isTreasureChest ? treasureChestYOffset : pickupYOffset, 0f);
+        attachedPickupInstance.transform.localPosition = new Vector3(0f, yOffset, 0f);
         attachedPickupInstance.transform.localRotation = Quaternion.identity;
 
         Collider pickupCollider = attachedPickupInstance.GetComponent<Collider>();
@@ -102,14 +133,30 @@ public class SafePlatform : Tile
             pickupCollider2D.isTrigger = true;
         }
 
-        if (pickupPrefab == coinPickupPrefab && attachedPickupInstance.GetComponent<CoinPickup>() == null)
+        if (isCoin && attachedPickupInstance.GetComponent<CoinPickup>() == null)
         {
             attachedPickupInstance.AddComponent<CoinPickup>();
         }
 
-        if (isTreasureChest && attachedPickupInstance.GetComponent<TreasureChestPickup>() == null)
+        if (isTreasureChest)
         {
-            attachedPickupInstance.AddComponent<TreasureChestPickup>();
+            TreasureChestPickup chestComponent = attachedPickupInstance.GetComponent<TreasureChestPickup>();
+            if (chestComponent == null)
+            {
+                if (attachedPickupInstance.GetComponent<Collider>() == null)
+                {
+                    BoxCollider box = attachedPickupInstance.AddComponent<BoxCollider>();
+                    box.isTrigger = true;
+                    box.center = Vector3.zero;
+                    box.size = Vector3.one;
+                }
+                chestComponent = attachedPickupInstance.AddComponent<TreasureChestPickup>();
+            }
+
+            chestComponent.Initialize(chestRarity);
+#if UNITY_EDITOR
+            Debug.Log($"[SafePlatform] Spawned {chestRarity} chest at grid {GridPosition}, world {attachedPickupInstance.transform.position}");
+#endif
         }
 
         CoinPickup coinPickup = attachedPickupInstance.GetComponent<CoinPickup>();
@@ -117,6 +164,80 @@ public class SafePlatform : Tile
         {
             coinPickup.ResetAnimationOrigin();
         }
+    }
+
+    private TreasureChestPickup.ChestRarity PickChestRarity()
+    {
+        // Altitude bonus: higher Y = better chest odds
+        float altitudeBonus = (GridPosition.y / (float)RarityAltitudeStep) * RarityAltitudeScale;
+
+        float roll = Random.value;
+        float cumulative = 0f;
+
+        for (int i = ChestRarityWeights.Length - 1; i >= 0; i--)
+        {
+            float adjustedWeight = ChestRarityWeights[i];
+            if (i >= 2) // Epic and Legendary get altitude bonus
+            {
+                adjustedWeight += altitudeBonus;
+            }
+            else if (i == 0) // Common weight decreases at altitude
+            {
+                adjustedWeight -= altitudeBonus * 0.5f;
+                if (adjustedWeight < 0.1f) adjustedWeight = 0.1f;
+            }
+
+            cumulative += adjustedWeight;
+        }
+
+        // Normalize and pick
+        if (cumulative <= 0f) return TreasureChestPickup.ChestRarity.Common;
+
+        float normalizedRoll = roll * cumulative;
+        float runningTotal = 0f;
+
+        for (int i = ChestRarityWeights.Length - 1; i >= 0; i--)
+        {
+            float adjustedWeight = ChestRarityWeights[i];
+            if (i >= 2)
+            {
+                adjustedWeight += altitudeBonus;
+            }
+            else if (i == 0)
+            {
+                adjustedWeight -= altitudeBonus * 0.5f;
+                if (adjustedWeight < 0.1f) adjustedWeight = 0.1f;
+            }
+
+            runningTotal += adjustedWeight;
+            if (normalizedRoll <= runningTotal)
+            {
+                return (TreasureChestPickup.ChestRarity)i;
+            }
+        }
+
+        return TreasureChestPickup.ChestRarity.Common;
+    }
+
+    private GameObject GetChestPrefabForRarity(TreasureChestPickup.ChestRarity rarity)
+    {
+        int index = (int)rarity;
+        if (treasureChestPrefabs != null && index < treasureChestPrefabs.Length && treasureChestPrefabs[index] != null)
+        {
+            return treasureChestPrefabs[index];
+        }
+
+        return ResolveChestPrefabFallback(index);
+    }
+
+    private GameObject ResolveChestPrefabFallback(int index)
+    {
+#if UNITY_EDITOR
+        string path = $"Assets/TreasureChest/Prefabs/TreasureChest_{index}.prefab";
+        return UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
+#else
+        return null;
+#endif
     }
 
     protected void ClearAttachedPickup()
@@ -141,9 +262,24 @@ public class SafePlatform : Tile
             coinPickupPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Coin.prefab");
         }
 
-        if (treasureChestPrefab == null)
+        if (treasureChestPrefabs == null || treasureChestPrefabs.Length == 0)
         {
-            treasureChestPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TreasureChest/Prefabs/TreasureChest_0.prefab");
+            treasureChestPrefabs = new GameObject[4];
+            for (int i = 0; i < 4; i++)
+            {
+                treasureChestPrefabs[i] = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/TreasureChest/Prefabs/TreasureChest_{i}.prefab");
+            }
+        }
+        else
+        {
+            // Fill any null slots
+            for (int i = 0; i < treasureChestPrefabs.Length && i < 4; i++)
+            {
+                if (treasureChestPrefabs[i] == null)
+                {
+                    treasureChestPrefabs[i] = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/TreasureChest/Prefabs/TreasureChest_{i}.prefab");
+                }
+            }
         }
 #endif
     }

@@ -129,6 +129,9 @@ public class SimpleMenuUI : MonoBehaviour
         tmp.color = UIColorPalette.TextSecondary;
         tmp.fontStyle = FontStyles.Bold;
 
+        // Assign the TMP font asset
+        UIHelper.AssignDefaultFont(tmp);
+
         RefreshProfileNameText(tmp);
     }
 

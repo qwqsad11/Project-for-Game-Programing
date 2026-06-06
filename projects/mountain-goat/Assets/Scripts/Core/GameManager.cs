@@ -186,10 +186,16 @@ public class GameManager : MonoBehaviour
 
         // Submit to leaderboard
         PlayerProfile activeProfile = profileManager?.GetActiveProfile();
+        Debug.Log($"[GameManager] HandleGameOver: Score={Score}, activeProfile={activeProfile?.profileName ?? "null"}, leaderboardProvider={leaderboardProvider != null}");
         if (activeProfile != null && leaderboardProvider != null)
         {
             LeaderboardEntry entry = LeaderboardEntry.Create(activeProfile, Score, SessionCoins);
+            Debug.Log($"[GameManager] HandleGameOver: Submitting entry — name={entry.playerName}, score={entry.score}, profileId={entry.profileId}");
             leaderboardProvider.SubmitEntry(entry);
+        }
+        else
+        {
+            Debug.LogWarning($"[GameManager] HandleGameOver: NOT submitting — activeProfile is null? {activeProfile == null}, leaderboardProvider is null? {leaderboardProvider == null}");
         }
 
         LoadSceneIfNeeded(gameOverSceneName);
@@ -609,6 +615,9 @@ public class GameManager : MonoBehaviour
         text.fontSize = 28;
         text.alignment = TextAlignmentOptions.Center;
         text.color = new Color(0.2f, 0.2f, 0.2f, 1f);
+
+        // Assign the TMP font asset
+        UIHelper.AssignDefaultFont(text);
 
         return buttonObject;
     }

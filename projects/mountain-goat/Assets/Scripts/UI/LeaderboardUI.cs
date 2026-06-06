@@ -28,7 +28,8 @@ public class LeaderboardUI : MonoBehaviour
     private void Awake()
     {
         BuildUI();
-        RefreshEntries();
+        // RefreshEntries() is called by Show() at the end of BuildUI(),
+        // and again by OnEnable(). No need for a third call here.
     }
 
     private void OnEnable()
@@ -85,6 +86,8 @@ public class LeaderboardUI : MonoBehaviour
 
     private void BuildUI()
     {
+        UIHelper.EnsureEventSystem();
+
         // Ensure our own GameObject has a RectTransform for proper UI nesting
         RectTransform selfRect = GetComponent<RectTransform>();
         if (selfRect == null)
@@ -97,10 +100,35 @@ public class LeaderboardUI : MonoBehaviour
         selfRect.offsetMax = Vector2.zero;
 
         Canvas canvas = FindObjectOfType<Canvas>();
-        if (canvas != null)
+        if (canvas == null)
         {
-            transform.SetParent(canvas.transform, false);
+            // Create a Canvas if none exists in the scene
+            GameObject canvasObj = new GameObject("Canvas");
+            canvas = canvasObj.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+            canvasObj.AddComponent<GraphicRaycaster>();
         }
+        else
+        {
+            // Ensure essential components exist on the Canvas
+            CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
+            if (scaler == null)
+            {
+                scaler = canvas.gameObject.AddComponent<CanvasScaler>();
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1920f, 1080f);
+                scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+                scaler.matchWidthOrHeight = 0.5f;
+            }
+            if (canvas.GetComponent<GraphicRaycaster>() == null)
+                canvas.gameObject.AddComponent<GraphicRaycaster>();
+        }
+        transform.SetParent(canvas.transform, false);
 
         // Full-screen overlay with centered card
         rootPanel = UIHelper.CreateOverlayPanel(transform, "Leaderboard",
@@ -152,11 +180,14 @@ public class LeaderboardUI : MonoBehaviour
         viewportRect.offsetMax = new Vector2(-14f, 0f); // leave room for scrollbar
 
         Image viewportImg = viewportObj.AddComponent<Image>();
-        viewportImg.color = new Color(0f, 0f, 0f, 0f);
+        viewportImg.sprite = UIHelper.GetRoundedRectSprite();
+        viewportImg.type = Image.Type.Sliced;
+        viewportImg.color = new Color(1f, 1f, 1f, 0.5f); // DEBUG: semi-visible to see viewport bounds
         viewportImg.raycastTarget = true;
 
-        Mask viewportMask = viewportObj.AddComponent<Mask>();
-        viewportMask.showMaskGraphic = false;
+        // Mask removed temporarily for debugging — if entries become visible, the mask was the issue
+        // Mask viewportMask = viewportObj.AddComponent<Mask>();
+        // viewportMask.showMaskGraphic = false;
 
         // ── Content ──
         GameObject contentObj = new GameObject("Content");
@@ -262,11 +293,13 @@ public class LeaderboardUI : MonoBehaviour
         ILeaderboardProvider leaderboard = GameManager.Instance?.Leaderboard;
         if (leaderboard == null)
         {
+            Debug.LogWarning("[LeaderboardUI] RefreshEntries: GameManager.Instance.Leaderboard is null!");
             totalEntriesText.text = "No leaderboard data available.";
             return;
         }
 
         List<LeaderboardEntry> entries = leaderboard.GetTopEntries(100);
+        Debug.Log($"[LeaderboardUI] RefreshEntries: got {entries.Count} entries");
         string activeProfileId = GameManager.Instance?.ActiveProfileId ?? "";
 
         if (entries.Count == 0)
@@ -277,11 +310,13 @@ public class LeaderboardUI : MonoBehaviour
         }
 
         totalEntriesText.text = $"Top {entries.Count} Players";
+        Debug.Log($"[LeaderboardUI] totalEntriesText set to: '{totalEntriesText.text}', totalEntriesText.gameObject.activeSelf={totalEntriesText.gameObject.activeSelf}, totalEntriesText.gameObject.activeInHierarchy={totalEntriesText.gameObject.activeInHierarchy}");
 
         float entryHeight = 44f;
         float spacing = 2f;
         float totalHeight = entries.Count * (entryHeight + spacing);
         contentContainer.sizeDelta = new Vector2(555f, totalHeight);
+        Debug.Log($"[LeaderboardUI] contentContainer sizeDelta set to (555, {totalHeight}), parent viewport activeInHierarchy={contentContainer.parent?.gameObject.activeInHierarchy}");
 
         for (int i = 0; i < entries.Count; i++)
         {
@@ -312,6 +347,9 @@ public class LeaderboardUI : MonoBehaviour
         Image bg = entryObj.AddComponent<Image>();
         bg.sprite = UIHelper.GetRoundedRectSprite();
         bg.type = Image.Type.Sliced;
+        bg.raycastTarget = false; // Don't block scroll input
+
+        Debug.Log($"[LeaderboardUI] CreateEntry rank={rank}: pos={position}, parent={contentContainer.name}, contentContainer.sizeDelta={contentContainer.sizeDelta}, entry activeInHierarchy={entryObj.activeInHierarchy}");
 
         // Color the entry based on status
         if (isCurrentPlayer)
@@ -376,11 +414,15 @@ public class LeaderboardUI : MonoBehaviour
         rect.sizeDelta = size;
         rect.anchoredPosition = position;
 
-        TMP_Text text = go.AddComponent<TextMeshProUGUI>();
+        TextMeshProUGUI text = go.AddComponent<TextMeshProUGUI>();
         text.text = content;
         text.fontSize = fontSize;
         text.alignment = alignment;
         text.color = color;
+        text.raycastTarget = false; // Don't block scroll input
+
+        // Assign the TMP font asset — text won't render without this
+        UIHelper.AssignDefaultFont(text);
     }
 
     private static string GetCharacterIcon(int characterId)
