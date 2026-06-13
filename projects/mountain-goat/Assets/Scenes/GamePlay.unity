@@ -213,7 +213,7 @@ RectTransform:
   m_GameObject: {fileID: 258594829}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1606047852}
@@ -255,7 +255,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   safePlatformPrefab: {fileID: 1635426308758110852, guid: 0a6e1b4cec894e74d96344e3b0555549, type: 3}
   crumblePlatformPrefab: {fileID: 3232161663204846402, guid: 17dd681e06fb3d04eba2611e93af7775, type: 3}
-  dangerousPlatformPrefab: {fileID: 1635426308758110852, guid: 7dd6da7129a0724419e8d590b27e34df, type: 3}
   obstaclePrefab: {fileID: 3232161663204846402, guid: 17dd681e06fb3d04eba2611e93af7775, type: 3}
   bonusPrefab: {fileID: 7177207604694151566, guid: a3a3916d9c554a34aae82a88fffbd067, type: 3}
   spawnedRoot: {fileID: 0}
@@ -612,12 +611,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 9222726501709179223}
-  cameraRotation: {x: 0, y: -75, z: 0}
-  followOffset: {x: 40, y: 0, z: -10}
-  lookOffset: {x: 0, y: 1.1, z: 0}
-  lookAheadHeight: 1.2
+  isometricOffset: {x: 6.5, y: 8.5, z: -6.5}
+  cameraAngleX: 35
+  cameraAngleY: 45
   smoothTime: 0.18
-  centerTargetOnScreen: 1
+  upwardBias: 2.25
   targetScreenYOffset: -1.25
   minFollowHeight: 0
   shakeDuration: 0.12
@@ -758,6 +756,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1026077165}
   m_CullTransparentMesh: 1
+--- !u!114 &1361662497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1361662494}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 145c8baaace11bd47aa4c07fc557f9bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  scoreText: {fileID: 1733387969}
+  highScoreText: {fileID: 1026077167}
+  hungerText: {fileID: 2084616154}
+  coinsText: {fileID: 1419610577}
+  totalCoinsText: {fileID: 541021062}
 --- !u!1 &1419610575
 GameObject:
   m_ObjectHideFlags: 0
@@ -983,8 +998,6 @@ MonoBehaviour:
   hungerText: {fileID: 2084616154}
   coinsText: {fileID: 1419610577}
   totalCoinsText: {fileID: 541021062}
-  coinPopScale: 1.25
-  coinPopDuration: 0.16
 --- !u!1 &1650613620
 GameObject:
   m_ObjectHideFlags: 0
@@ -1029,17 +1042,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad008ac1347edb24da46ff8366dc4bc3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  goat: {fileID: 0}
-  player: {fileID: 0}
+  player: {fileID: 9222726501709179226}
   gridManager: {fileID: 550984304}
   chunkSpawner: {fileID: 264748568}
-  visibleAreaSize: 30
-  recenterThreshold: 2
-  safePlatformOnly: 1
+  pathGenerator: {fileID: 1674795836}
+  halfWidth: 2
+  initialRows: 24
+  rowsAhead: 18
+  rowsBehind: 8
+  extraPlatformChance: 0.35
+  gapChance: 0.18
   crumbleChance: 0.12
   springChance: 0.05
   hazardChance: 0.08
-  dangerousPlatformChance: 0.08
+  bonusChance: 0.03
 --- !u!1 &1674795835
 GameObject:
   m_ObjectHideFlags: 0
@@ -1368,10 +1384,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
-    - target: {fileID: 7000000000000000003, guid: 8610743574a819245af11f2814ba0d8c, type: 3}
-      propertyPath: cameraFollow
-      value: 
-      objectReference: {fileID: 963194229}
     - target: {fileID: 8479798530941442597, guid: 8610743574a819245af11f2814ba0d8c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1443,8 +1455,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ef6db5b21e1ab54d91c523e04bc4570, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentGrid: {x: 0, y: 0}
-  canDie: 1
+  startGrid: {x: 0, y: 0}
+  currentGridPosition: {x: 0, y: 0}
+  targetGridPosition: {x: 0, y: 0}
+  jumpDuration: 0.18
+  jumpHeight: 0.95
+  squashAmount: 0.12
+  stretchAmount: 0.12
+  springJumpMultiplier: 1.35
+  fallDeathY: -8
+  spawnProtectionDuration: 0.35
+  animator: {fileID: 0}
+  visualRoot: {fileID: 0}
+  cameraFollow: {fileID: 963194229}
 --- !u!136 &9222726501709179216
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1482,19 +1505,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHunger: 100
   startingHunger: 0
-  hungerIncreasePerSecond: 10
-  highHungerThreshold: 70
-  highHungerDeathDelay: 3
-  warningBarOffset: {x: 0, y: 1.6, z: 0}
-  warningBarSize: {x: 1.2, y: 0.16}
-  warningBarBackgroundColor: {r: 0, g: 0, b: 0, a: 0.65}
-  warningBarStartColor: {r: 0.15, g: 0.85, b: 0.25, a: 0.95}
-  warningBarEndColor: {r: 1, g: 0.2, b: 0.1, a: 0.95}
+  hungerIncreasePerSecond: 1
+  highHungerThreshold: 100
 --- !u!4 &9222726501709179223 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8479798530941442597, guid: 8610743574a819245af11f2814ba0d8c, type: 3}
   m_PrefabInstance: {fileID: 4006541122894678949}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &9222726501709179226 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7000000000000000001, guid: 8610743574a819245af11f2814ba0d8c, type: 3}
+  m_PrefabInstance: {fileID: 4006541122894678949}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9222726501709179214}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c8f5c0b1d2e4f6a8b9c0d1e2f3a4b5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

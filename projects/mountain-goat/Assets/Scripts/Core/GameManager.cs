@@ -6,14 +6,12 @@ using TMPro;
 
 public class GameManager : MonoBehaviour
 {
-    public enum GameState { Menu, CharacterSelect, Playing, GameOver, Paused, Tutorial }
+    public enum GameState { Menu, Playing, GameOver, Paused }
 
     [Header("Scene Names")]
     [SerializeField] private string mainMenuSceneName = "MainMenu";
-    [SerializeField] private string characterSelectSceneName = "CharacterSelect";
     [SerializeField] private string gameplaySceneName = "GamePlay";
     [SerializeField] private string gameOverSceneName = "GameOver";
-    [SerializeField] private string tutorialSceneName = "Tutorial";
     [SerializeField] private bool forceMenuOnPlay = true;
 
     private static GameManager _instance;
@@ -39,48 +37,11 @@ public class GameManager : MonoBehaviour
     public GameState CurrentState => currentState;
 
     public int Score { get; private set; } = 0;
-    public int HighScore
-    {
-        get
-        {
-            PlayerProfile profile = profileManager?.GetActiveProfile();
-            return profile?.highScore ?? 0;
-        }
-    }
+    public int HighScore { get; private set; } = 0;
     public int SessionCoins { get; private set; } = 0;
-    public int TotalCoins
-    {
-        get
-        {
-            PlayerProfile profile = profileManager?.GetActiveProfile();
-            return profile?.totalCoins ?? 0;
-        }
-    }
+    public int TotalCoins { get; private set; } = 0;
     public float CurrentHunger { get; private set; } = 0f;
     public float MaxHunger { get; private set; } = 100f;
-
-    public string ActiveProfileName
-    {
-        get
-        {
-            PlayerProfile profile = profileManager?.GetActiveProfile();
-            return profile?.profileName ?? "Player";
-        }
-    }
-
-    public string ActiveProfileId
-    {
-        get
-        {
-            PlayerProfile profile = profileManager?.GetActiveProfile();
-            return profile?.profileId ?? "";
-        }
-    }
-
-    public ILeaderboardProvider Leaderboard => leaderboardProvider;
-
-    private ProfileManager profileManager;
-    private LocalLeaderboardProvider leaderboardProvider;
 
     private void Awake()
     {
@@ -92,15 +53,12 @@ public class GameManager : MonoBehaviour
         else if (_instance != this)
         {
             Destroy(gameObject);
-            return;
         }
 
-        // Initialize ProfileManager
-        EnsureProfileManager();
-        EnsureLeaderboard();
+        LoadHighScore();
+        LoadTotalCoins();
 
-        string activeSceneName = SceneManager.GetActiveScene().name;
-        if (forceMenuOnPlay && activeSceneName != mainMenuSceneName && activeSceneName != characterSelectSceneName && activeSceneName != tutorialSceneName)
+        if (forceMenuOnPlay && SceneManager.GetActiveScene().name != mainMenuSceneName)
         {
             currentState = GameState.Menu;
             Time.timeScale = 1f;
@@ -138,17 +96,11 @@ public class GameManager : MonoBehaviour
             case GameState.Playing:
                 HandlePlayingState();
                 break;
-            case GameState.CharacterSelect:
-                HandleCharacterSelectState();
-                break;
             case GameState.GameOver:
                 HandleGameOverState();
                 break;
             case GameState.Paused:
                 HandlePausedState();
-                break;
-            case GameState.Tutorial:
-                HandleTutorialState();
                 break;
         }
     }
@@ -164,39 +116,22 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1f;
         Score = 0;
         SessionCoins = 0;
-        profileManager?.IncrementPlayCount();
         OnScoreChanged?.Invoke(Score);
         OnCoinsChanged?.Invoke(SessionCoins, TotalCoins);
         NotifyHungerChanged(0f, MaxHunger <= 0f ? 100f : MaxHunger);
         LoadSceneIfNeeded(gameplaySceneName);
     }
 
-    private void HandleCharacterSelectState()
-    {
-        Time.timeScale = 1f;
-        LoadSceneIfNeeded(characterSelectSceneName);
-    }
-
     private void HandleGameOverState()
     {
         Time.timeScale = 0f;
-
-        // Update profile high score
-        profileManager?.UpdateHighScore(Score);
-
-        // Submit to leaderboard
-        PlayerProfile activeProfile = profileManager?.GetActiveProfile();
-        Debug.Log($"[GameManager] HandleGameOver: Score={Score}, activeProfile={activeProfile?.profileName ?? "null"}, leaderboardProvider={leaderboardProvider != null}");
-        if (activeProfile != null && leaderboardProvider != null)
+        if (Score > HighScore)
         {
-            LeaderboardEntry entry = LeaderboardEntry.Create(activeProfile, Score, SessionCoins);
-            Debug.Log($"[GameManager] HandleGameOver: Submitting entry — name={entry.playerName}, score={entry.score}, profileId={entry.profileId}");
-            leaderboardProvider.SubmitEntry(entry);
+            HighScore = Score;
+            SaveHighScore();
         }
-        else
-        {
-            Debug.LogWarning($"[GameManager] HandleGameOver: NOT submitting — activeProfile is null? {activeProfile == null}, leaderboardProvider is null? {leaderboardProvider == null}");
-        }
+
+        SaveTotalCoins();
 
         LoadSceneIfNeeded(gameOverSceneName);
     }
@@ -204,17 +139,6 @@ public class GameManager : MonoBehaviour
     private void HandlePausedState()
     {
         Time.timeScale = 0f;
-    }
-
-    private void HandleTutorialState()
-    {
-        Time.timeScale = 1f;
-        Score = 0;
-        SessionCoins = 0;
-        OnScoreChanged?.Invoke(Score);
-        OnCoinsChanged?.Invoke(SessionCoins, TotalCoins);
-        NotifyHungerChanged(0f, MaxHunger <= 0f ? 100f : MaxHunger);
-        LoadSceneIfNeeded(tutorialSceneName);
     }
 
     public void AddScore(int points)
@@ -231,7 +155,7 @@ public class GameManager : MonoBehaviour
         }
 
         SessionCoins += amount;
-        profileManager?.AddCoins(amount);
+        TotalCoins += amount;
         OnCoinsChanged?.Invoke(SessionCoins, TotalCoins);
     }
 
@@ -241,21 +165,6 @@ public class GameManager : MonoBehaviour
     }
 
     public void StartGame()
-    {
-        ChangeState(GameState.Playing);
-    }
-
-    public void ChooseCharacter()
-    {
-        ChangeState(GameState.CharacterSelect);
-    }
-
-    public void StartTutorial()
-    {
-        ChangeState(GameState.Tutorial);
-    }
-
-    public void StartGameplay()
     {
         ChangeState(GameState.Playing);
     }
@@ -288,23 +197,26 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void EnsureProfileManager()
+    private void LoadHighScore()
     {
-        profileManager = FindObjectOfType<ProfileManager>();
-        if (profileManager == null)
-        {
-            GameObject go = new GameObject("ProfileManager");
-            profileManager = go.AddComponent<ProfileManager>();
-            DontDestroyOnLoad(go);
-        }
+        HighScore = PlayerPrefs.GetInt("HighScore", 0);
     }
 
-    private void EnsureLeaderboard()
+    private void LoadTotalCoins()
     {
-        if (leaderboardProvider == null)
-        {
-            leaderboardProvider = new LocalLeaderboardProvider();
-        }
+        TotalCoins = PlayerPrefs.GetInt("TotalCoins", 0);
+    }
+
+    private void SaveHighScore()
+    {
+        PlayerPrefs.SetInt("HighScore", HighScore);
+        PlayerPrefs.Save();
+    }
+
+    private void SaveTotalCoins()
+    {
+        PlayerPrefs.SetInt("TotalCoins", TotalCoins);
+        PlayerPrefs.Save();
     }
 
     private void LoadSceneIfNeeded(string sceneName)
@@ -334,18 +246,6 @@ public class GameManager : MonoBehaviour
             EnsureGameplaySceneContent();
         }
 
-        if (scene.name == characterSelectSceneName)
-        {
-            EnsureEventSystem();
-            EnsureDirectionalLight();
-        }
-
-        if (scene.name == tutorialSceneName)
-        {
-            EnsureEventSystem();
-            EnsureDirectionalLight();
-        }
-
         if (scene.name == gameplaySceneName)
         {
             CameraFollow cameraFollow = FindObjectOfType<CameraFollow>();
@@ -369,17 +269,9 @@ public class GameManager : MonoBehaviour
         {
             currentState = GameState.Playing;
         }
-        else if (activeSceneName == characterSelectSceneName)
-        {
-            currentState = GameState.CharacterSelect;
-        }
         else if (activeSceneName == gameOverSceneName)
         {
             currentState = GameState.GameOver;
-        }
-        else if (activeSceneName == tutorialSceneName)
-        {
-            currentState = GameState.Tutorial;
         }
         else
         {
@@ -431,13 +323,6 @@ public class GameManager : MonoBehaviour
         {
             GameObject levelObject = new GameObject("LevelGenerator");
             levelGenerator = levelObject.AddComponent<LevelGenerator>();
-        }
-
-        RollingObstacleSpawner rollingObstacleSpawner = FindObjectOfType<RollingObstacleSpawner>();
-        if (rollingObstacleSpawner == null)
-        {
-            GameObject rollingObstacleSpawnerObject = new GameObject("RollingObstacleSpawner");
-            rollingObstacleSpawnerObject.AddComponent<RollingObstacleSpawner>();
         }
 
         GoatController goat = FindObjectOfType<GoatController>();
@@ -615,9 +500,6 @@ public class GameManager : MonoBehaviour
         text.fontSize = 28;
         text.alignment = TextAlignmentOptions.Center;
         text.color = new Color(0.2f, 0.2f, 0.2f, 1f);
-
-        // Assign the TMP font asset
-        UIHelper.AssignDefaultFont(text);
 
         return buttonObject;
     }

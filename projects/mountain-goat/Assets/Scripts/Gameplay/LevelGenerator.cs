@@ -4,34 +4,41 @@ using UnityEngine;
 public class LevelGenerator : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private GoatController goat;
     [SerializeField] private PlayerController player;
     [SerializeField] private GridManager gridManager;
     [SerializeField] private ChunkSpawner chunkSpawner;
+    [SerializeField] private PathGenerator pathGenerator;
 
-    [Header("Visibility")]
-    [SerializeField] private int visibleAreaSize = 50;
-    [SerializeField] private int recenterThreshold = 2;
+    [Header("Generation")]
+    [SerializeField] private int halfWidth = 2;
+    [SerializeField] private int initialRows = 24;
+    [SerializeField] private int rowsAhead = 18;
+    [SerializeField] private int rowsBehind = 8;
+
+    [Header("Mountain Shape")]
+    [SerializeField, Range(0f, 1f)] private float ridgeTurnChance = 0.28f;
+    [SerializeField, Range(0f, 0.1f)] private float gapChance = 0.08f;
+    [SerializeField, Range(0f, 1f)] private float extraPlatformChance = 0.22f;
 
     [Header("Tile Variety")]
-    [SerializeField] private bool safePlatformOnly = true;
     [SerializeField, Range(0f, 1f)] private float crumbleChance = 0.12f;
     [SerializeField, Range(0f, 1f)] private float springChance = 0.05f;
     [SerializeField, Range(0f, 1f)] private float hazardChance = 0.04f;
-    [SerializeField, Range(0f, 1f)] private float dangerousPlatformChance = 0.08f;
-
-    [Header("Thunderclouds")]
-    [SerializeField] private GameObject thundercloudPrefab;
-    [SerializeField, Range(0f, 1f)] private float thundercloudChance = 0.08f;
-    [SerializeField] private int thundercloudMinY = 4;
-    [SerializeField] private Vector3 thundercloudOffset = new Vector3(0f, 1.8f, 0f);
 
     private readonly Dictionary<Vector2Int, Tile> activeTiles = new Dictionary<Vector2Int, Tile>();
-    private readonly Dictionary<Vector2Int, ThundercloudHazard> activeThunderclouds = new Dictionary<Vector2Int, ThundercloudHazard>();
-    private readonly HashSet<Vector2Int> generatedCells = new HashSet<Vector2Int>();
-    private readonly HashSet<Vector2Int> protectedCells = new HashSet<Vector2Int>();
-    private Vector2Int windowCenter;
-    private bool hasWindowCenter;
+    private readonly HashSet<Vector2Int> mountainCells = new HashSet<Vector2Int>();
+    private int highestGeneratedRow = -1;
+    private Vector2Int ridgeCursor;
+    private Vector2Int ridgeDirection = GoatController.UpperRight;
+    private bool forceGapRecovery;
+
+    private static readonly Vector2Int[] NeighborOffsets =
+    {
+        GoatController.UpperLeft,
+        GoatController.UpperRight,
+        GoatController.LowerLeft,
+        GoatController.LowerRight
+    };
 
     private void Awake()
     {
@@ -43,112 +50,332 @@ public class LevelGenerator : MonoBehaviour
         ResolveReferences();
         ClearAll();
 
-        Vector2Int startGrid = GetReferenceGrid();
-        SetWindowCenter(startGrid, true);
+        int startColumn = pathGenerator != null ? pathGenerator.GetSeedColumn() : 0;
+        ridgeCursor = new Vector2Int(Mathf.Clamp(startColumn, -halfWidth, halfWidth), 0);
+        ridgeDirection = Random.value < 0.5f ? GoatController.UpperRight : GoatController.UpperLeft;
+        forceGapRecovery = false;
+        highestGeneratedRow = -1;
+
+        GenerateUntil(initialRows - 1);
     }
 
-    public void RequestAheadForJump(Vector2Int currentGrid, Vector2Int targetGrid)
+    private void Update()
     {
-        EnsureCell(currentGrid, true, true);
-
-        if (IsInsideCurrentWindow(targetGrid))
+        if (GameManager.Instance != null && GameManager.Instance.CurrentState != GameManager.GameState.Playing)
         {
-            EnsureCell(targetGrid, true, true);
+            return;
+        }
+
+        ResolveReferences();
+
+        int playerY = GetPlayerGridY();
+        GenerateUntil(playerY + rowsAhead);
+        PruneBelow(playerY - rowsBehind);
+    }
+
+    private void ResolveReferences()
+    {
+        if (gridManager == null)
+        {
+            gridManager = GridManager.Instance != null ? GridManager.Instance : FindObjectOfType<GridManager>();
+        }
+
+        if (chunkSpawner == null)
+        {
+            chunkSpawner = FindObjectOfType<ChunkSpawner>();
+        }
+
+        if (pathGenerator == null)
+        {
+            pathGenerator = FindObjectOfType<PathGenerator>();
+        }
+
+        if (player == null)
+        {
+            player = FindObjectOfType<PlayerController>();
         }
     }
 
-    public void NotifyLanded(Vector2Int landedGrid)
+    private int GetPlayerGridY()
     {
-        EnsureCell(landedGrid, true, true);
-        if (!hasWindowCenter || GridDistance(landedGrid, windowCenter) >= recenterThreshold)
+        if (player != null)
         {
-            SetWindowCenter(landedGrid, true);
+            return player.CurrentGrid.y;
+        }
+
+        GoatController goat = FindObjectOfType<GoatController>();
+        if (goat != null)
+        {
+            return goat.CurrentGrid.y;
+        }
+
+        return 0;
+    }
+
+    private void GenerateUntil(int targetRow)
+    {
+        while (highestGeneratedRow < targetRow)
+        {
+            highestGeneratedRow++;
+            GenerateRow(highestGeneratedRow);
         }
     }
 
-    public bool EnsurePlatformAt(Vector2Int gridPosition)
+    private void GenerateRow(int row)
     {
-        if (!CanPlaceCell(gridPosition) || !IsInsideCurrentWindow(gridPosition))
+        if (row > 0)
         {
-            return false;
+            ridgeCursor = ChooseNextRidgeCursor();
         }
 
-        EnsureCell(gridPosition, true, true);
-        return gridManager != null && gridManager.HasPlatform(gridPosition);
+        BuildMountainRow(ridgeCursor, row, row == 0);
     }
 
-    private void SetWindowCenter(Vector2Int centerGrid, bool pruneAfterGenerate)
+    private Vector2Int ChooseNextRidgeCursor()
     {
-        windowCenter = centerGrid;
-        hasWindowCenter = true;
-        EnsureVisibleWindow(centerGrid);
+        bool canGoLeft = ridgeCursor.x > -halfWidth;
+        bool canGoRight = ridgeCursor.x < halfWidth;
 
-        if (pruneAfterGenerate)
+        if (!canGoLeft && canGoRight)
         {
-            PruneOutsideWindow(centerGrid);
+            ridgeDirection = GoatController.UpperRight;
         }
+        else if (!canGoRight && canGoLeft)
+        {
+            ridgeDirection = GoatController.UpperLeft;
+        }
+        else if (Random.value < ridgeTurnChance)
+        {
+            ridgeDirection = ridgeDirection == GoatController.UpperRight
+                ? GoatController.UpperLeft
+                : GoatController.UpperRight;
+        }
+
+        Vector2Int candidate = ClampToWorld(ridgeCursor + ridgeDirection);
+        if (!GridManager.IsDiagonalStep(candidate - ridgeCursor))
+        {
+            ridgeDirection = ridgeDirection == GoatController.UpperRight
+                ? GoatController.UpperLeft
+                : GoatController.UpperRight;
+            candidate = ClampToWorld(ridgeCursor + ridgeDirection);
+        }
+
+        return candidate;
     }
 
-    private void EnsureVisibleWindow(Vector2Int centerGrid)
+    private void BuildMountainRow(Vector2Int spinePosition, int row, bool isSeedRow)
     {
-        int halfSize = Mathf.Max(1, visibleAreaSize / 2);
-        for (int y = centerGrid.y - halfSize; y <= centerGrid.y + halfSize; y++)
+        HashSet<Vector2Int> rowCells = new HashSet<Vector2Int>();
+
+        AddMountainCell(spinePosition, PickRidgeTileKind(row), true, rowCells);
+
+        Vector2Int downhillOffset = ridgeDirection == GoatController.UpperRight
+            ? GoatController.LowerRight
+            : GoatController.LowerLeft;
+        Vector2Int uphillOffset = ridgeDirection == GoatController.UpperRight
+            ? GoatController.UpperLeft
+            : GoatController.UpperRight;
+
+        bool allowGap = !isSeedRow && !forceGapRecovery && Random.value < gapChance;
+        if (!allowGap)
         {
-            for (int x = centerGrid.x - halfSize; x <= centerGrid.x + halfSize; x++)
+            AddMountainCell(ClampToWorld(spinePosition + downhillOffset), PickSupportTileKind(row), false, rowCells);
+            forceGapRecovery = false;
+        }
+        else
+        {
+            forceGapRecovery = true;
+        }
+
+        AddMountainCell(ClampToWorld(spinePosition + downhillOffset + downhillOffset), PickSupportTileKind(row), false, rowCells);
+
+        if (Random.value < extraPlatformChance || isSeedRow)
+        {
+            AddMountainCell(ClampToWorld(spinePosition + uphillOffset), PickSupportTileKind(row), false, rowCells);
+        }
+
+        if (Random.value < extraPlatformChance * 0.65f)
+        {
+            AddMountainCell(ClampToWorld(spinePosition + uphillOffset + uphillOffset), PickSupportTileKind(row), false, rowCells);
+        }
+
+        GrowMountainFill(spinePosition, row, rowCells, isSeedRow);
+    }
+
+    private void GrowMountainFill(Vector2Int spinePosition, int row, HashSet<Vector2Int> rowCells, bool isSeedRow)
+    {
+        int targetDensity = isSeedRow ? 4 : 4;
+        if (Random.value < extraPlatformChance)
+        {
+            targetDensity = 5;
+        }
+
+        Queue<Vector2Int> frontier = new Queue<Vector2Int>(rowCells);
+        HashSet<Vector2Int> localVisited = new HashSet<Vector2Int>(rowCells);
+
+        while (frontier.Count > 0 && rowCells.Count < targetDensity)
+        {
+            Vector2Int source = frontier.Dequeue();
+            foreach (Vector2Int offset in OrderedNeighborOffsets(source, spinePosition))
             {
-                Vector2Int grid = new Vector2Int(x, y);
-                EnsureCell(grid, GridDistance(grid, centerGrid) <= 1, GridDistance(grid, centerGrid) <= 1);
+                Vector2Int candidate = ClampToWorld(source + offset);
+                if (candidate == source || mountainCells.Contains(candidate) || localVisited.Contains(candidate))
+                {
+                    continue;
+                }
+
+                if (!CanPlaceCell(candidate))
+                {
+                    continue;
+                }
+
+                int neighborCount = CountNeighbors(candidate, mountainCells, rowCells);
+                if (neighborCount < 2 && candidate != spinePosition)
+                {
+                    continue;
+                }
+
+                AddMountainCell(candidate, PickSupportTileKind(row), false, rowCells);
+                localVisited.Add(candidate);
+                frontier.Enqueue(candidate);
+
+                if (rowCells.Count >= targetDensity)
+                {
+                    break;
+                }
+            }
+        }
+
+        if (rowCells.Count < targetDensity)
+        {
+            foreach (Vector2Int offset in OrderedNeighborOffsets(spinePosition, spinePosition))
+            {
+                if (rowCells.Count >= targetDensity)
+                {
+                    break;
+                }
+
+                Vector2Int candidate = ClampToWorld(spinePosition + offset);
+                if (candidate == spinePosition || mountainCells.Contains(candidate) || rowCells.Contains(candidate))
+                {
+                    continue;
+                }
+
+                if (!CanPlaceCell(candidate))
+                {
+                    continue;
+                }
+
+                if (CountNeighbors(candidate, mountainCells, rowCells) >= 1)
+                {
+                    AddMountainCell(candidate, PickSupportTileKind(row), false, rowCells);
+                }
             }
         }
     }
 
-    private void EnsureCell(Vector2Int gridPosition, bool isMainPath, bool protectFromPrune)
+    private IEnumerable<Vector2Int> OrderedNeighborOffsets(Vector2Int source, Vector2Int spinePosition)
     {
-        if (!CanPlaceCell(gridPosition))
+        if (source == spinePosition)
         {
-            return;
+            if (ridgeDirection == GoatController.UpperRight)
+            {
+                yield return GoatController.LowerRight;
+                yield return GoatController.UpperLeft;
+                yield return GoatController.UpperRight;
+                yield return GoatController.LowerLeft;
+            }
+            else
+            {
+                yield return GoatController.LowerLeft;
+                yield return GoatController.UpperRight;
+                yield return GoatController.UpperLeft;
+                yield return GoatController.LowerRight;
+            }
+
+            yield break;
         }
 
-        if (protectFromPrune)
-        {
-            protectedCells.Add(gridPosition);
-        }
-
-        if (generatedCells.Contains(gridPosition) || activeTiles.ContainsKey(gridPosition))
-        {
-            return;
-        }
-
-        generatedCells.Add(gridPosition);
-        SpawnTile(gridPosition, PickTileKind(gridPosition, isMainPath), isMainPath);
+        yield return GoatController.LowerLeft;
+        yield return GoatController.LowerRight;
+        yield return GoatController.UpperLeft;
+        yield return GoatController.UpperRight;
     }
 
-    private TileType PickTileKind(Vector2Int gridPosition, bool isMainPath)
+    private void AddMountainCell(Vector2Int gridPosition, TileType kind, bool isMainPath, HashSet<Vector2Int> rowCells)
     {
-        if (!isMainPath && gridPosition.y > 1 && Random.value < dangerousPlatformChance)
+        if (!CanPlaceCell(gridPosition) || mountainCells.Contains(gridPosition))
         {
-            return TileType.CrumbleTile;
+            return;
         }
 
-        if (safePlatformOnly || gridPosition.y <= 1 || isMainPath)
+        mountainCells.Add(gridPosition);
+        rowCells.Add(gridPosition);
+        SpawnTile(gridPosition, kind, isMainPath);
+    }
+
+    private bool CanPlaceCell(Vector2Int gridPosition)
+    {
+        return gridPosition.x >= -halfWidth && gridPosition.x <= halfWidth && gridPosition.y >= 0;
+    }
+
+    private int CountNeighbors(Vector2Int gridPosition, HashSet<Vector2Int> primary, HashSet<Vector2Int> secondary)
+    {
+        int count = 0;
+
+        for (int i = 0; i < NeighborOffsets.Length; i++)
         {
-            return TileType.NormalTile;
+            Vector2Int neighbor = gridPosition + NeighborOffsets[i];
+            if (primary.Contains(neighbor) || secondary.Contains(neighbor))
+            {
+                count++;
+            }
         }
 
+        return count;
+    }
+
+    private TileType PickRidgeTileKind(int row)
+    {
         float roll = Random.value;
-        if (roll < crumbleChance)
+
+        if (row > 2 && roll < crumbleChance)
         {
             return TileType.CrumbleTile;
         }
 
         roll -= crumbleChance;
-        if (roll < springChance)
+        if (row > 0 && roll < springChance)
         {
             return TileType.SpringTile;
         }
 
         roll -= springChance;
         if (roll < hazardChance)
+        {
+            return TileType.HazardTile;
+        }
+
+        roll -= hazardChance;
+        return TileType.NormalTile;
+    }
+
+    private TileType PickSupportTileKind(int row)
+    {
+        float roll = Random.value;
+        if (row > 2 && roll < crumbleChance * 0.5f)
+        {
+            return TileType.CrumbleTile;
+        }
+
+        roll -= crumbleChance * 0.5f;
+        if (roll < springChance * 0.4f)
+        {
+            return TileType.SpringTile;
+        }
+
+        roll -= springChance * 0.4f;
+        if (roll < hazardChance * 0.25f)
         {
             return TileType.HazardTile;
         }
@@ -167,165 +394,7 @@ public class LevelGenerator : MonoBehaviour
         if (tile != null)
         {
             activeTiles[gridPosition] = tile;
-            TrySpawnThundercloud(gridPosition, isMainPath);
         }
-    }
-
-    private void TrySpawnThundercloud(Vector2Int gridPosition, bool isMainPath)
-    {
-        if (gridPosition.y < thundercloudMinY || activeThunderclouds.ContainsKey(gridPosition))
-        {
-            return;
-        }
-
-        if (isMainPath && GridDistance(gridPosition, windowCenter) <= 1)
-        {
-            return;
-        }
-
-        if (Random.value >= thundercloudChance)
-        {
-            return;
-        }
-
-        GameObject prefab = ResolveThundercloudPrefab();
-        if (prefab == null)
-        {
-            return;
-        }
-
-        Vector3 tilePosition = GridManager.Instance != null
-            ? GridManager.Instance.GridToWorld(gridPosition)
-            : IsoGrid.ToWorld(gridPosition, 1.5f, 0.75f, 0.5f);
-        GameObject instance = Instantiate(prefab, tilePosition + thundercloudOffset, Quaternion.identity, transform);
-        ThundercloudHazard hazard = instance.GetComponent<ThundercloudHazard>();
-        if (hazard == null)
-        {
-            hazard = instance.AddComponent<ThundercloudHazard>();
-        }
-
-        hazard.Initialize(gridPosition);
-        activeThunderclouds[gridPosition] = hazard;
-    }
-
-    private void PruneOutsideWindow(Vector2Int centerGrid)
-    {
-        List<Vector2Int> toRemove = null;
-        int halfSize = Mathf.Max(1, visibleAreaSize / 2);
-        foreach (KeyValuePair<Vector2Int, Tile> entry in activeTiles)
-        {
-            Vector2Int grid = entry.Key;
-            if (protectedCells.Contains(grid) || IsInsideWindow(grid, centerGrid, halfSize))
-            {
-                continue;
-            }
-
-            toRemove ??= new List<Vector2Int>();
-            toRemove.Add(grid);
-        }
-
-        if (toRemove == null)
-        {
-            return;
-        }
-
-        for (int i = 0; i < toRemove.Count; i++)
-        {
-            Vector2Int grid = toRemove[i];
-            if (activeTiles.TryGetValue(grid, out Tile tile) && tile != null)
-            {
-                chunkSpawner.Recycle(grid);
-            }
-
-            RecycleThundercloud(grid);
-            activeTiles.Remove(grid);
-            generatedCells.Remove(grid);
-            protectedCells.Remove(grid);
-        }
-    }
-
-    private void ClearAll()
-    {
-        List<Vector2Int> keys = new List<Vector2Int>(activeTiles.Keys);
-        for (int i = 0; i < keys.Count; i++)
-        {
-            Vector2Int grid = keys[i];
-            if (activeTiles.TryGetValue(grid, out Tile tile) && tile != null)
-            {
-                if (chunkSpawner != null)
-                {
-                    chunkSpawner.Recycle(grid);
-                }
-                else
-                {
-                    Destroy(tile.gameObject);
-                }
-            }
-
-            activeTiles.Remove(grid);
-        }
-
-        List<Vector2Int> thundercloudKeys = new List<Vector2Int>(activeThunderclouds.Keys);
-        for (int i = 0; i < thundercloudKeys.Count; i++)
-        {
-            RecycleThundercloud(thundercloudKeys[i]);
-        }
-
-        generatedCells.Clear();
-        protectedCells.Clear();
-        hasWindowCenter = false;
-    }
-
-    private void RecycleThundercloud(Vector2Int gridPosition)
-    {
-        if (!activeThunderclouds.TryGetValue(gridPosition, out ThundercloudHazard hazard))
-        {
-            return;
-        }
-
-        activeThunderclouds.Remove(gridPosition);
-        if (hazard != null)
-        {
-            Destroy(hazard.gameObject);
-        }
-    }
-
-    private void ResolveReferences()
-    {
-        if (gridManager == null)
-        {
-            gridManager = GridManager.Instance != null ? GridManager.Instance : FindObjectOfType<GridManager>();
-        }
-
-        if (chunkSpawner == null)
-        {
-            chunkSpawner = FindObjectOfType<ChunkSpawner>();
-        }
-
-        if (goat == null)
-        {
-            goat = FindObjectOfType<GoatController>();
-        }
-
-        if (player == null)
-        {
-            player = FindObjectOfType<PlayerController>();
-        }
-    }
-
-    private Vector2Int GetReferenceGrid()
-    {
-        if (goat != null)
-        {
-            return goat.CurrentGrid;
-        }
-
-        if (player != null)
-        {
-            return player.CurrentGrid;
-        }
-
-        return Vector2Int.zero;
     }
 
     private static PlatformKind ToLegacyKind(TileType tileType)
@@ -341,43 +410,67 @@ public class LevelGenerator : MonoBehaviour
         };
     }
 
-    private static bool IsInsideWindow(Vector2Int gridPosition, Vector2Int centerGrid, int halfSize)
+    private Vector2Int ClampToWorld(Vector2Int gridPosition)
     {
-        return Mathf.Abs(gridPosition.x - centerGrid.x) <= halfSize
-            && Mathf.Abs(gridPosition.y - centerGrid.y) <= halfSize;
+        return new Vector2Int(Mathf.Clamp(gridPosition.x, -halfWidth, halfWidth), Mathf.Max(0, gridPosition.y));
     }
 
-    private bool IsInsideCurrentWindow(Vector2Int gridPosition)
+    private void PruneBelow(int minimumY)
     {
-        if (!hasWindowCenter)
+        List<Vector2Int> toRemove = null;
+
+        foreach (KeyValuePair<Vector2Int, Tile> entry in activeTiles)
         {
-            return true;
+            if (entry.Key.y < minimumY)
+            {
+                toRemove ??= new List<Vector2Int>();
+                toRemove.Add(entry.Key);
+            }
         }
 
-        int halfSize = Mathf.Max(1, visibleAreaSize / 2);
-        return IsInsideWindow(gridPosition, windowCenter, halfSize);
-    }
-
-    private static int GridDistance(Vector2Int a, Vector2Int b)
-    {
-        return Mathf.Max(Mathf.Abs(a.x - b.x), Mathf.Abs(a.y - b.y));
-    }
-
-    private static bool CanPlaceCell(Vector2Int gridPosition)
-    {
-        return gridPosition.y >= 0;
-    }
-
-    private GameObject ResolveThundercloudPrefab()
-    {
-        if (thundercloudPrefab != null)
+        if (toRemove == null)
         {
-            return thundercloudPrefab;
+            return;
         }
 
-#if UNITY_EDITOR
-        thundercloudPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Thundercloud_Prewarm.prefab");
-#endif
-        return thundercloudPrefab;
+        for (int i = 0; i < toRemove.Count; i++)
+        {
+            Vector2Int grid = toRemove[i];
+            if (activeTiles.TryGetValue(grid, out Tile tile) && tile != null)
+            {
+                chunkSpawner.Recycle(grid);
+            }
+
+            activeTiles.Remove(grid);
+            mountainCells.Remove(grid);
+        }
+    }
+
+    private void ClearAll()
+    {
+        List<Vector2Int> keys = new List<Vector2Int>(activeTiles.Keys);
+        for (int i = 0; i < keys.Count; i++)
+        {
+            Vector2Int grid = keys[i];
+            if (!activeTiles.TryGetValue(grid, out Tile tile) || tile == null)
+            {
+                activeTiles.Remove(grid);
+                mountainCells.Remove(grid);
+                continue;
+            }
+
+            tile.Recycle();
+            if (chunkSpawner != null)
+            {
+                chunkSpawner.Recycle(grid);
+            }
+            else
+            {
+                Destroy(tile.gameObject);
+            }
+
+            activeTiles.Remove(grid);
+            mountainCells.Remove(grid);
+        }
     }
 }

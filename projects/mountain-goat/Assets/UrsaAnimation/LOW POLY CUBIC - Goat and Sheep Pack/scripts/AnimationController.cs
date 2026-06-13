@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace Ursaanimation.CubicFarmAnimals
 {
-    [RequireComponent(typeof(Animator))]
     public class AnimationController : MonoBehaviour
     {
         public Animator animator;
@@ -15,77 +14,45 @@ namespace Ursaanimation.CubicFarmAnimals
         public string sittostandAnimation = "sit_to_stand";
         public string standtositAnimation = "stand_to_sit";
 
-        private void Awake()
+        void Start()
         {
-            if (animator == null)
+            animator = GetComponent<Animator>();
+        }
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.W))
             {
-                animator = GetComponent<Animator>();
+                animator.Play(walkForwardAnimation);
             }
-
-            if (animator != null)
+            else if (Input.GetKeyDown(KeyCode.S))
             {
-                animator.applyRootMotion = false;
+                animator.Play(walkBackwardAnimation);
             }
-        }
-
-        public void SetAnimator(Animator value)
-        {
-            animator = value != null ? value : GetComponent<Animator>();
-        }
-
-        public void PlayIdle()
-        {
-            PlayState("idle");
-        }
-
-        public void PlayWalkForward()
-        {
-            PlayState(walkForwardAnimation);
-        }
-
-        public void PlayWalkBackward()
-        {
-            PlayState(walkBackwardAnimation);
-        }
-
-        public void PlayRunForward()
-        {
-            PlayState(runForwardAnimation);
-        }
-
-        public void PlayTurnLeft()
-        {
-            PlayState(turn90LAnimation);
-        }
-
-        public void PlayTurnRight()
-        {
-            PlayState(turn90RAnimation);
-        }
-
-        public void PlayTrot()
-        {
-            PlayState(trotAnimation);
-        }
-
-        public void PlaySitToStand()
-        {
-            PlayState(sittostandAnimation);
-        }
-
-        public void PlayStandToSit()
-        {
-            PlayState(standtositAnimation);
-        }
-
-        public void PlayState(string stateName)
-        {
-            if (animator == null || string.IsNullOrEmpty(stateName))
+            else if (Input.GetKeyDown(KeyCode.Alpha1))
             {
-                return;
+                animator.Play(runForwardAnimation);
             }
-
-            animator.Play(stateName, 0, 0f);
+            else if (Input.GetKeyDown(KeyCode.A))
+            {
+                animator.Play(turn90LAnimation);
+            }
+            else if (Input.GetKeyDown(KeyCode.D))
+            {
+                animator.Play(turn90RAnimation);
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                animator.Play(trotAnimation);
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha4))
+            {
+                animator.Play(sittostandAnimation);
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha3))
+            {
+                animator.Play(standtositAnimation);
+            }
         }
     }
 }

@@ -2450,7 +2450,6 @@ GameObject:
   - component: {fileID: 7000000000000000001}
   - component: {fileID: 7000000000000000002}
   - component: {fileID: 7000000000000000003}
-  - component: {fileID: 7000000000000000004}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -2488,7 +2487,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: 1215e98cc02a91340b3a9af5af091f14, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
-  m_ApplyRootMotion: 0
+  m_ApplyRootMotion: 1
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_WarningMessage: 
@@ -2508,7 +2507,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e5010bff315c6e4c8a413f69e3d6458, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animator: {fileID: 4488131368354554865}
+  animator: {fileID: 0}
   walkForwardAnimation: walk_forward
   walkBackwardAnimation: walk_backwards
   runForwardAnimation: run_forward
@@ -2526,23 +2525,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 4980728175960791824}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ac7084d8faa713542840500e2e7a83da, type: 3}
+  m_Script: {fileID: 11500000, guid: 6c8f5c0b1d2e4f6a8b9c0d1e2f3a4b5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tileWidth: 1.5
-  tileDepth: 1.5
-  tileHeight: 0.5
   startGrid: {x: 0, y: 0}
   minGrid: {x: -2, y: 0}
   maxGrid: {x: 2, y: 99999}
-  jumpDuration: 0.3
+  jumpDuration: 0.15
   jumpHeight: 0.85
   squashAmount: 0.12
   stretchAmount: 0.12
   fallDeathY: -8
   spawnProtectionDuration: 0.5
-  requirePlatformToMove: 1
-  fallIfNoPlatform: 1
   animator: {fileID: 4488131368354554865}
 --- !u!114 &7000000000000000002
 MonoBehaviour:
@@ -2556,8 +2550,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a1b2c3d4e5f60718293a4b5c6d7e8f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraFollow: {fileID: 0}
-  worldYOffset: 0.45
 --- !u!114 &7000000000000000003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2570,90 +2562,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ef6db5b21e1ab54d91c523e04bc4570, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tileWidth: 1.5
+  tileDepth: 1.5
+  gridStepY: 0.5
   startGrid: {x: 0, y: 0}
-  currentGridPosition: {x: 0, y: 0}
-  targetGridPosition: {x: 0, y: 0}
-  jumpDuration: 0.36
-  jumpHeight: 0.95
-  squashAmount: 0.12
-  stretchAmount: 0.12
-  springJumpMultiplier: 1.35
-  comboInputWindow: 0.12
+  minGrid: {x: -2, y: 0}
+  maxGrid: {x: 2, y: 99999}
   fallDeathY: -8
   spawnProtectionDuration: 0.5
-  worldYOffset: 0.45
   animator: {fileID: 4488131368354554865}
-  visualRoot: {fileID: 8479798530941442597}
-  cameraFollow: {fileID: 0}
-  packAnimationController: {fileID: 0}
---- !u!114 &7000000000000000004
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4980728175960791824}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4c2bb0a6f55c4d14bbd245b88e7c33f1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  defaultCharacter: 0
-  goatAnimator: {fileID: 4488131368354554865}
-  goatVisualRoots:
-  - {fileID: 2852788379180820330}
-  - {fileID: 8736641328598552304}
-  animalVisuals:
-  - character: 0
-    prefab: {fileID: 6885452974112614176, guid: 1f8729ffe5e3ebb45b5c6b50bc6a2cec, type: 3}
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 180, z: 0}
-    localScale: {x: 0.85, y: 0.85, z: 0.85}
-  - character: 1
-    prefab: {fileID: 4026167085268298930, guid: 3edcf70af3303894482eb673a57b1198, type: 3}
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 180, z: 0}
-    localScale: {x: 0.85, y: 0.85, z: 0.85}
-  - character: 2
-    prefab: {fileID: 6517686061769116559, guid: f32fc89859f16ec49bc857008a5ed9c5, type: 3}
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 180, z: 0}
-    localScale: {x: 0.85, y: 0.85, z: 0.85}
-  - character: 3
-    prefab: {fileID: 1868461998570734802, guid: d4d6ee78313566d4fb5c9a6ce2e66e80, type: 3}
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 180, z: 0}
-    localScale: {x: 0.85, y: 0.85, z: 0.85}
-  - character: 4
-    prefab: {fileID: 4803590418286029818, guid: 89340c34cb7cd124883d3f31b9835bfd, type: 3}
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 180, z: 0}
-    localScale: {x: 0.85, y: 0.85, z: 0.85}
-  - character: 5
-    prefab: {fileID: 1252666402916706, guid: 87df6cb86b0f78744acf059601c574ee, type: 3}
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 180, z: 0}
-    localScale: {x: 0.9, y: 0.9, z: 0.9}
-  - character: 6
-    prefab: {fileID: 1019569807689630, guid: 31232edd50bea4a4c98cf6b60f98bcf5, type: 3}
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 180, z: 0}
-    localScale: {x: 0.85, y: 0.85, z: 0.85}
-  - character: 7
-    prefab: {fileID: 1827988484473126, guid: b58846aead748844a8311f61b2a6985f, type: 3}
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 180, z: 0}
-    localScale: {x: 0.85, y: 0.85, z: 0.85}
-  - character: 8
-    prefab: {fileID: 1469362139191444, guid: 42a96e9e197d85c4caab5a7788fcf780, type: 3}
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 180, z: 0}
-    localScale: {x: 0.8, y: 0.8, z: 0.8}
-  - character: 9
-    prefab: {fileID: 1285316864343350, guid: 4ea409bb7e41261488263e099c27e0fe, type: 3}
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 180, z: 0}
-    localScale: {x: 0.8, y: 0.8, z: 0.8}
 --- !u!1 &4991923091833278311
 GameObject:
   m_ObjectHideFlags: 0
