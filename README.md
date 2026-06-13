@@ -1,56 +1,33 @@
-# Solar System Project
+# Unity Project Collection
 
-An interactive visualization project of the solar system developed using the Unity engine.
+This repository contains multiple Unity projects that are kept isolated from each other.
 
-## Project Overview
+## Projects
 
-This project showcases the movement and interaction of celestial bodies in the solar system. Users can click or interact with different planets to observe their information.
+### Solar System Project
 
-## Project Structure
+The original root-level Unity project is an interactive solar system visualization.
 
-```
-Assets/
-├── Scenes/                 # Scene files
-│   └── SampleScene.unity   # Main scene
-├── SolarSystemAssets2026/  # Solar system resources
-│   ├── Scripts/            # C# script files
-│   ├── Materials/          # Material files
-│   ├── Textures/           # Texture files
-│   ├── Icons/              # Icon assets
-│   └── Sounds/             # Sound effects
-└── TextMesh Pro/           # TextMesh Pro text component resources
-```
+- Open from the repository root in Unity Hub
+- Main scene: `Assets/Scenes/SampleScene.unity`
 
-## Core Scripts
+### Mountain Goat Project
 
-- **CameraFocusController.cs** - Camera focus control
-- **CelestialBody.cs** - Celestial body base class
-- **RotateAround.cs** - Rotation around central body
-- **SolarSystemInteractor.cs** - Solar system interaction system
-- **SolarSystemUIManager.cs** - UI manager
-- **Spawner.cs** - Object spawner
-- **LookAtTarget.cs** - Look at target script
-- **Projectile.cs** - Projectile script
+The new game project is stored as a separate Unity project under `projects/mountain-goat/`.
 
-## Technologies Used
+- Open `projects/mountain-goat/` in Unity Hub as its own project
+- Main scenes: `Assets/Scenes/MainMenu.unity`, `Assets/Scenes/GamePlay.unity`, `Assets/Scenes/GameOver.unity`
 
-- Unity 3D Engine
-- C# Programming Language
-- TextMesh Pro Text Component
-- 3D Graphics Rendering
+## Isolation Strategy
 
-## Installation and Usage
+The two Unity projects are not merged into one editor project.
 
-1. Ensure Unity 2022 or newer version is installed
-2. Clone this project to your local machine
-3. Open the project with Unity Hub
-4. Open SampleScene in the Unity Editor
-5. Click the play button to run the project
+- `Solar System Project` stays at the repository root
+- `Mountain Goat Project` lives under `projects/mountain-goat/`
+- Each project keeps its own `Assets`, `Packages`, and `ProjectSettings`
+- Generated Unity folders such as `Library` and `Temp` are ignored
 
-## License
+## Notes
 
-This project is for educational and personal use only.
-
----
-
-**Created**: April 2026
+- Use Unity Hub to open the correct project folder depending on which project you want to work on
+- Do not move assets between the two projects unless you intend to share them manually
